@@ -8,7 +8,7 @@ def test_create_pecha():
     text_path = Path("tests") / "data" / "text"
 
     # act
-    initial_pecha_id, open_pecha_id = create_pecha(text_path)
+    initial_pecha_id, open_pecha_id = create_pecha(text_path, publish=False)
 
     # assert
     assert initial_pecha_id
