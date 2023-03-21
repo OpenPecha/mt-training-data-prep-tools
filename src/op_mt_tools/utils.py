@@ -5,7 +5,7 @@ from openpecha.core import metadata
 from openpecha.core.pecha import OpenPechaGitRepo
 
 
-def create_pecha(path: Path, publish=True) -> Tuple[str, str]:
+def create_pecha(path: Path, output_path=None, publish=True) -> Tuple[str, str]:
     """create InitialPecha and OpenPecha from text files in path.
 
     Args:
@@ -27,8 +27,8 @@ def create_pecha(path: Path, publish=True) -> Tuple[str, str]:
         initial_pecha.set_base(text)
         open_pecha.set_base(text)
 
-    initial_pecha.save()
-    open_pecha.save()
+    initial_pecha.save(output_path=output_path)
+    open_pecha.save(output_path=output_path)
 
     if publish:
         initial_pecha.publish()
