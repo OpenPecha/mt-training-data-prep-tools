@@ -1,0 +1,37 @@
+from pathlib import Path
+from typing import Tuple
+
+from openpecha.core import metadata
+from openpecha.core.pecha import OpenPechaGitRepo
+
+
+def create_pecha(path: Path, publish=True) -> Tuple[str, str]:
+    """create InitialPecha and OpenPecha from text files in path.
+
+    Args:
+        path (Path): path to text files
+        publish (bool, optional): publish pecha to OpenPecha-Data. Defaults to True.
+
+    Returns:
+        tuple[str, str]: pecha_id of InitialPecha and OpenPecha
+    """
+
+    initial_pecha_meta = metadata.InitialPechaMetadata()
+    open_pecha_meta = metadata.OpenPechaMetadata()
+
+    initial_pecha = OpenPechaGitRepo(metadata=initial_pecha_meta)
+    open_pecha = OpenPechaGitRepo(metadata=open_pecha_meta)
+
+    for fn in path.iterdir():
+        text = fn.read_text(encoding="utf-8")
+        initial_pecha.set_base(text)
+        open_pecha.set_base(text)
+
+    initial_pecha.save()
+    open_pecha.save()
+
+    if publish:
+        initial_pecha.publish()
+        open_pecha.publish()
+
+    return initial_pecha.pecha_id, open_pecha.pecha_id
