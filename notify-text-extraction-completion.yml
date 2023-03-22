@@ -1,0 +1,42 @@
+name: Notify Text Extraction Completion
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if issue's title starts with EN or BO
+        run: |
+          if [[ ${{ github.event.issue.title }} =~ ^(EN|BO) ]]; then
+            echo "Issue title starts with EN or BO"
+            # Proceed with creating or updating file
+          else
+            echo "Issue title does not start with EN or BO"
+            exit 1
+          fi
+      - name: Create or update file
+        uses: actions/checkout@v2
+        with:
+          repository: MonlamAI/catalog
+          path: mt/extracted-text-pairs
+        run: |
+          filename=$(echo "${{ github.event.issue.title }}" | cut -c3-)
+          filepath=$GITHUB_WORKSPACE/mt/extracted-text-pairs/$filename
+          if [ ! -f $filepath ]; then
+            echo "${{ github.event.issue.title:0:2 }}" > $filepath
+          else
+            echo "${{ github.event.issue.title:0:2 }}" > $filepath
+          fi
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4.7.1
+        with:
+          commit_message: "Update extracted-text-pairs"
+          commit_options: "--no-verify"
+          repository: MonlamAI/catalog
+          branch: main
+          file_pattern: "mt/extracted-text-pairs/*"
+          commit_user_name: "GitHub Action"
+          commit_user_email: "github-action@users.noreply.github.com"
