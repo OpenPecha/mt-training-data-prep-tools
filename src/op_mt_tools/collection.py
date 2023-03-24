@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from openpecha.utils import load_yaml
+from openpecha.utils import dump_yaml, load_yaml
 
 
 class Metadata:
@@ -10,9 +10,9 @@ class Metadata:
         self,
         id: str,
         title: str,
-        created_at: datetime,
-        updated_at: datetime,
-        items: List[str],
+        created_at: datetime = datetime.now(),
+        updated_at: datetime = datetime.now(),
+        items: List[str] = [],
     ):
         self.id = id
         self.title = title
@@ -47,13 +47,16 @@ class Collection:
         path: Path to the collection.
     """
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, metadata: Optional[Metadata] = None):
         self.path = Path(path)
-        self._metadata: Optional[Metadata] = None
+        self._metadata = metadata
 
     @property
     def opa_path(self) -> Path:
-        return self.path / f"{self.path.name}.opc"
+        path = self.path / f"{self.path.name}.opc"
+        if not path.exists():
+            path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def meta_fn(self) -> Path:
@@ -72,3 +75,6 @@ class Collection:
 
     def get_pechas(self) -> List[str]:
         return self.metadata.items
+
+    def save(self) -> None:
+        dump_yaml(self.metadata.to_dict(), self.meta_fn)

@@ -42,3 +42,21 @@ def test_collection_get_pechas(collection_path):
     collection = Collection(collection_path)
     collection.set_pecha("P000001")
     assert collection.get_pechas() == ["P000001"]
+
+
+def test_collection_save(tmp_path):
+    collection_path = tmp_path / "collection"
+    metadata = Metadata(
+        id="test",
+        title="test",
+    )
+    collection = Collection(
+        path=collection_path,
+        metadata=metadata,
+    )
+    collection.set_pecha("P000001")
+    collection.save()
+    assert collection.meta_fn.exists()
+
+    collection = Collection(collection_path)
+    assert collection.metadata.items == ["P000001"]
