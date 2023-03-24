@@ -4,8 +4,13 @@ from typing import Tuple
 from openpecha.core import metadata
 from openpecha.core.pecha import OpenPechaGitRepo
 
+INITIAL_PECHA_ID = str  # OpenPecha initial pecha id
+OPEN_PECHA_ID = str  # OpenPecha open pecha id
 
-def create_pecha(path: Path, output_path=None, publish=True) -> Tuple[str, str]:
+
+def create_pecha(
+    path: Path, output_path=None, publish=True
+) -> Tuple[INITIAL_PECHA_ID, OPEN_PECHA_ID]:
     """create InitialPecha and OpenPecha from text files in path.
 
     Args:
