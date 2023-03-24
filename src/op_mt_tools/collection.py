@@ -1,9 +1,12 @@
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from openpecha.core import ids as op_ids
 from openpecha.utils import dump_yaml, load_yaml
+
+LANG_CODE = str  # "bo" or "en"
+PECHA_ID = str  # openpecha pecha id
 
 
 class Metadata:
@@ -13,7 +16,7 @@ class Metadata:
         id: str = op_ids.get_collection_id(),
         created_at: datetime = datetime.now(),
         updated_at: datetime = datetime.now(),
-        items: List[str] = [],
+        items: List[Dict[LANG_CODE, PECHA_ID]] = [],
     ):
         self.id = id
         self.title = title
@@ -83,11 +86,13 @@ class Collection:
         self._metadata = Metadata.from_dict(load_yaml(self.meta_fn))
         return self._metadata
 
-    def set_pecha(self, pecha_id: str) -> str:
-        self.metadata.items.append(pecha_id)
-        return pecha_id
+    def add_text_pair(
+        self, text_pair: Dict[LANG_CODE, PECHA_ID]
+    ) -> Dict[LANG_CODE, PECHA_ID]:
+        self.metadata.items.append(text_pair)
+        return text_pair
 
-    def get_pechas(self) -> List[str]:
+    def get_text_pairs(self) -> List[Dict[LANG_CODE, PECHA_ID]]:
         return self.metadata.items
 
     def save(self, output_path: Optional[Path] = None) -> Path:

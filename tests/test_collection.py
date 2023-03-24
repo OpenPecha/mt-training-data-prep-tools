@@ -20,46 +20,45 @@ def test_metadata():
         title="test",
         created_at=created_at,
         updated_at=updated_at,
-        items=["P000001", "P000002"],
+        items=[{"bo": "P000001", "en": "P000002"}],
     )
     assert metadata.to_dict() == {
         "id": "test",
         "title": "test",
         "created_at": created_at,
         "updated_at": updated_at,
-        "items": ["P000001", "P000002"],
+        "items": [{"bo": "P000001", "en": "P000002"}],
     }
     assert metadata.to_dict() == Metadata.from_dict(metadata.to_dict()).to_dict()
 
 
-def test_collection_set_pecha(collection_path):
+def test_collection_add_text_pair(collection_path):
     collection = Collection(collection_path)
-    collection.set_pecha("P000001")
-    assert collection.metadata.items == ["P000001"]
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    assert collection.metadata.items == [{"bo": "P000001", "en": "P000002"}]
 
 
-def test_collection_get_pechas(collection_path):
+def test_collection_get_text_pairs(collection_path):
     collection = Collection(collection_path)
-    collection.set_pecha("P000001")
-    assert collection.get_pechas() == ["P000001"]
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    assert collection.get_text_pairs() == [{"bo": "P000001", "en": "P000002"}]
 
 
 def test_collection_save(tmp_path):
-    collection_path = tmp_path / "collection"
+    collection_path = tmp_path / "test"
     metadata = Metadata(
         id="test",
         title="test",
     )
     collection = Collection(
-        path=collection_path,
         metadata=metadata,
     )
-    collection.set_pecha("P000001")
-    collection.save()
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    collection.save(output_path=tmp_path)
     assert collection.meta_fn.exists()
 
     collection = Collection(collection_path)
-    assert collection.metadata.items == ["P000001"]
+    assert collection.metadata.items == [{"bo": "P000001", "en": "P000002"}]
 
 
 def test_collection_create_new(tmp_path):
@@ -67,7 +66,7 @@ def test_collection_create_new(tmp_path):
         title="test",
     )
     collection = Collection(metadata=metadata)
-    collection.set_pecha("P000001")
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
     collection.save(output_path=tmp_path)
 
     assert collection.meta_fn.exists()
