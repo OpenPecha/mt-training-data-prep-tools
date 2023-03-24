@@ -60,3 +60,14 @@ def test_collection_save(tmp_path):
 
     collection = Collection(collection_path)
     assert collection.metadata.items == ["P000001"]
+
+
+def test_collection_create_new(tmp_path):
+    metadata = Metadata(
+        title="test",
+    )
+    collection = Collection(metadata=metadata)
+    collection.set_pecha("P000001")
+    collection.save(output_path=tmp_path)
+
+    assert collection.meta_fn.exists()
