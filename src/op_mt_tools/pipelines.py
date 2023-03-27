@@ -19,5 +19,6 @@ def add_text_pair_to_collection_pipeline(
         _, open_pecha_id = create_pecha(path)
         text_pair[lang_code] = open_pecha_id
     collection = Collection(path=collection_path)
-    collection.add_text_pair(text_pair)
+    text_pair = collection.add_text_pair(text_pair)
     collection.save()
+    # collection.create_view(view_id=ViewsEnum.TEXTPAIR_PLAINTEXT, text_pair=text_pair)
