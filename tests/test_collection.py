@@ -4,7 +4,6 @@ from unittest import mock
 
 import pytest
 from openpecha.core.layer import Layer, LayerEnum
-from openpecha.core.metadata import OpenPechaMetadata
 from openpecha.core.pecha import OpenPechaGitRepo
 
 from op_mt_tools.collection import (
@@ -105,17 +104,16 @@ def test_view_metadata():
 @mock.patch("openpecha.core.pecha.download_pecha")
 def test_text_pair_plaintext_serializer(mock_download_pecha, tmp_path):
     # arrange
-    metadata = OpenPechaMetadata()
-    pecha_path = Path(tmp_path) / metadata.id
+    pecha_id = "P000001"
+    pecha_path = Path(tmp_path) / pecha_id
     mock_download_pecha.return_value = pecha_path
-    pecha = OpenPechaGitRepo(pecha_id=metadata.id, metadata=metadata)
-    pecha._opf_path = pecha_path / f"{metadata.id}.opf"
+    pecha = OpenPechaGitRepo(pecha_id=pecha_id)
+    pecha._opf_path = pecha_path / f"{pecha_id}.opf"
     base_name = pecha.set_base("fake content")
     pecha.save_base()
     pecha.save_layer(
         base_name, LayerEnum.author, Layer(annotation_type=LayerEnum.author)
     )
-    pecha_id = metadata.id
     output_path = Path(tmp_path)
     text_pair = {"bo": pecha_id, "en": pecha_id}
     result = text_pair_plaintext_serializer(text_pair, output_path)
