@@ -95,10 +95,10 @@ def register_serializer(name):
 
 
 class ViewsEnum:
-    TEXTPAIR_PLAINTEXT = "textpair-plaintext"
+    PLAINTEXT = "plaintext"
 
 
-@register_serializer(ViewsEnum.TEXTPAIR_PLAINTEXT)
+@register_serializer(ViewsEnum.PLAINTEXT)
 def text_pair_plaintext_serializer(
     text_pair: Dict[LANG_CODE, PECHA_ID],
     output_path: Path,
@@ -119,7 +119,7 @@ class View:
     """Class to represent a view of a collection.
 
     Args:
-        base_path (Path): Path to the collection.
+        base_path (Path): Path to the collection's views.
         id (str): Id of the view. If not provided, it will be generated.
         metadata (ViewMetadata): Metadata of the view. If not provided, it will be generated.
     """
@@ -133,19 +133,29 @@ class View:
         if not id and not metadata:
             raise ValueError("Either id or metadata must be provided.")
 
-        self.id = id
+        self._id = id
         self._metadata = metadata
         self.base_path = base_path
 
     @property
     def path(self) -> Path:
-        if self.id:
-            return self.base_path / self.id
-        return self.base_path / self.metadata.id
+        if self.id_:
+            path = self.base_path / self.id_
+        else:
+            path = self.base_path / self.metadata.id
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def meta_fn(self) -> Path:
         return self.path / "meta.yml"
+
+    @property
+    def id_(self) -> str:
+        if self._id:
+            return self._id
+        self._id = self.metadata.id
+        return self._id
 
     @property
     def metadata(self) -> ViewMetadata:
@@ -160,7 +170,10 @@ class View:
 
     def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
         self.save_metadata()
-        output_path = SERIALIZERS_REGISTRY[self.id](text_pair, self.path)
+        serializer = SERIALIZERS_REGISTRY.get(self.id_)
+        if serializer is None:
+            raise ValueError(f"Serializer for {self.id_} not found.")
+        output_path = serializer(text_pair, self.path)
         return output_path
 
 

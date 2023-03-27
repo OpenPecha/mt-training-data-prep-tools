@@ -9,7 +9,9 @@ from openpecha.core.pecha import OpenPechaGitRepo
 from op_mt_tools.collection import (
     Collection,
     Metadata,
+    View,
     ViewMetadata,
+    ViewsEnum,
     text_pair_plaintext_serializer,
 )
 
@@ -104,6 +106,8 @@ def test_view_metadata():
 @mock.patch("openpecha.core.pecha.download_pecha")
 def test_text_pair_plaintext_serializer(mock_download_pecha, tmp_path):
     # arrange
+
+    # create pecha
     pecha_id = "P000001"
     pecha_path = Path(tmp_path) / pecha_id
     mock_download_pecha.return_value = pecha_path
@@ -114,10 +118,35 @@ def test_text_pair_plaintext_serializer(mock_download_pecha, tmp_path):
     pecha.save_layer(
         base_name, LayerEnum.author, Layer(annotation_type=LayerEnum.author)
     )
+
     output_path = Path(tmp_path)
     text_pair = {"bo": pecha_id, "en": pecha_id}
+
+    # act
     result = text_pair_plaintext_serializer(text_pair, output_path)
 
+    # assert
     assert result == output_path
     assert (output_path / pecha_id / f"{base_name}-bo.txt").exists()
     assert (output_path / pecha_id / f"{base_name}-en.txt").exists()
+
+
+@mock.patch("op_mt_tools.collection.text_pair_plaintext_serializer")
+@mock.patch("op_mt_tools.collection.SERIALIZERS_REGISTRY")
+def test_view_generate(mock_serializers_registery, mock_serialiser, tmp_path):
+    # arrange
+    mock_serialiser.return_value = tmp_path / "views" / ViewsEnum.PLAINTEXT
+    mock_serializers_registery.get.return_value = mock_serialiser
+    view_metadata = ViewMetadata(
+        id=ViewsEnum.PLAINTEXT,
+        serializer=ViewsEnum.PLAINTEXT,
+        views_path=Path(f"views/{ViewsEnum.PLAINTEXT}/"),
+    )
+    view = View(base_path=(tmp_path / "views"), metadata=view_metadata)
+    text_pair = {"bo": "P000001", "en": "P000002"}
+
+    # act
+    output_path = view.generate(text_pair)
+
+    assert output_path == tmp_path / "views" / ViewsEnum.PLAINTEXT
+    assert mock_serialiser.aseert_called_once_with(text_pair, output_path)
