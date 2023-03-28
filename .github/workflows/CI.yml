@@ -29,10 +29,7 @@ jobs:
         pip install .[dev]
         
     - name: Test with pytest
-      run: |
-        pytest
+      run: pytest
     
     - name: Test Coverage
-      run: |
-        coverage run -m pytest
-        coverage report -m
+      run: PYTHONPATH=src pytest --cov op_mt_tools
