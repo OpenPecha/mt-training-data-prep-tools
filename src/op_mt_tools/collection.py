@@ -69,7 +69,7 @@ class ViewMetadata:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "serializer": self.serializer,
-            "views_path": self.views_path,
+            "views_path": str(self.views_path),
         }
 
     @classmethod
@@ -79,7 +79,7 @@ class ViewMetadata:
             created_at=data["created_at"],
             updated_at=data["updated_at"],
             serializer=data["serializer"],
-            views_path=data["views_path"],
+            views_path=Path(data["views_path"]),
         )
 
 
@@ -139,10 +139,7 @@ class View:
 
     @property
     def path(self) -> Path:
-        if self.id_:
-            path = self.base_path / self.id_
-        else:
-            path = self.base_path / self.metadata.id
+        path = self.base_path / self.id_
         path.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -252,5 +249,5 @@ class Collection:
 
     def create_view(self, view_id: str, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
         view = View(base_path=self.views_path, id=view_id)
-        views_path = view.generate(text_pair)
-        return views_path
+        view_path = view.generate(text_pair)
+        return view_path

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
-from .collection import LANG_CODE, Collection
+from .collection import LANG_CODE, Collection, ViewsEnum
 from .utils import create_pecha
 
 
@@ -21,4 +21,4 @@ def add_text_pair_to_collection_pipeline(
     collection = Collection(path=collection_path)
     text_pair = collection.add_text_pair(text_pair)
     collection.save()
-    # collection.create_view(view_id=ViewsEnum.TEXTPAIR_PLAINTEXT, text_pair=text_pair)
+    collection.create_view(view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair)
