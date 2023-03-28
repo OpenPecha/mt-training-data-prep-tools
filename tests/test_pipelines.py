@@ -2,7 +2,7 @@ from pathlib import Path
 from unittest import mock
 
 from op_mt_tools.collection import Collection, Metadata
-from op_mt_tools.pipelines import add_text_pair_to_collection_pipeline
+from op_mt_tools.pipelines import add_text_pair_to_collection_pipeline, get_text_pairs
 
 
 @mock.patch("op_mt_tools.collection.View")
@@ -34,3 +34,24 @@ def test_add_text_pair_to_collection_pipeline(mock_create_pecha, mock_view, tmp_
     # assert
     collection = Collection(collection_path)
     assert {"bo": "O001", "en": "O001"} in collection.metadata.items
+
+
+def create_monlamAI_tracker_data(path, n):
+    # create empty text pair file like BO0001.txt and EN0001.txt in tmp_path
+    for i in range(1, n):
+        bo_text_fn = path / f"BO{i:04d}"
+        bo_text_fn.touch()
+        if i % 2 == 0:
+            en_text_fn = path / f"EN{i:04d}"
+            en_text_fn.touch()
+    return path
+
+
+def test_get_text_pairs(tmp_path):
+    path = create_monlamAI_tracker_data(tmp_path, 4)
+
+    text_pair_paths = list(get_text_pairs(path))
+
+    assert text_pair_paths == [
+        {"bo": Path("texts") / "BO0002", "en": Path("texts") / "EN0002"},
+    ]
