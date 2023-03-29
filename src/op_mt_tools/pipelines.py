@@ -1,4 +1,5 @@
 import os
+import shutil
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
@@ -53,6 +54,8 @@ def download_monlamAI_textpairs_tracker_data() -> Path:
     """Download monlamAI tracker data."""
     tracker_repo_url = "https://github.com/MonlamAI/TRACKER.git"
     local_tracker_repo_path = Path.home() / "MonlamAI" / "TRACKER"
+    if local_tracker_repo_path.is_dir():
+        shutil.rmtree(local_tracker_repo_path)
     local_tracker_repo_path.mkdir(parents=True, exist_ok=True)
     Repo.clone_from(tracker_repo_url, str(local_tracker_repo_path))
     textpairs_tracker_path = local_tracker_repo_path / "mt" / "mt-extracted-text-pairs"
@@ -92,7 +95,7 @@ def add_text_pair_to_collection(
     collection.create_view(view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair)
 
 
-def pipeline(collection_path: Path) -> None:
+def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
     """Create collection from monlamAI text pair tracker.
 
     Args:
@@ -103,20 +106,3 @@ def pipeline(collection_path: Path) -> None:
     text_pair_paths = get_text_pairs(text_pairs_tracker_path)
     for text_pair_path in text_pair_paths:
         add_text_pair_to_collection(text_pair_path, collection_path)
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--collection-path",
-        type=str,
-        default=str(Path.home() / "monlamAI" / "collection"),
-        help="Path to the collection.",
-    )
-    args = parser.parse_args()
-
-    pipeline(
-        collection_path=Path(args.collection_path),
-    )
