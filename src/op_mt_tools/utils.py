@@ -26,8 +26,10 @@ def create_pecha(
 
     initial_pecha = OpenPechaGitRepo(metadata=initial_pecha_meta)
     open_pecha = OpenPechaGitRepo(metadata=open_pecha_meta)
+    initial_pecha.is_private = True
+    open_pecha.is_private = True
 
-    for fn in path.iterdir():
+    for fn in path.glob("*.txt"):
         text = fn.read_text(encoding="utf-8")
         initial_pecha.set_base(text)
         open_pecha.set_base(text)

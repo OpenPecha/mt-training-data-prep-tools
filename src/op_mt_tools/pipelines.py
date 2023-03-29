@@ -96,7 +96,7 @@ def add_text_pair_to_collection(
         text_pair_path: Path to the text pair.
     """
     text_pair_ids = [fn.name for fn in text_pair_path.values()]
-    print(f"[INFO] Adding text pair {text_pair_ids} to collection...")
+    print(f"[INFO] Adding text pair {text_pair_ids} to the collection...")
     text_pair = {}
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path)
