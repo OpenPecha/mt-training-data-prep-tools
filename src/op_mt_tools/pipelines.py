@@ -49,6 +49,16 @@ def download_text_pair(
         yield text_pair_path
 
 
+def download_monlamAI_textpairs_tracker_data() -> Path:
+    """Download monlamAI tracker data."""
+    tracker_repo_url = "https://github.com/MonlamAI/TRACKER.git"
+    local_tracker_repo_path = Path.home() / "MonlamAI" / "TRACKER"
+    local_tracker_repo_path.mkdir(parents=True, exist_ok=True)
+    Repo.clone_from(tracker_repo_url, str(local_tracker_repo_path))
+    textpairs_tracker_path = local_tracker_repo_path / "mt" / "mt-extracted-text-pairs"
+    return textpairs_tracker_path
+
+
 def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
@@ -63,7 +73,7 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
     return text_pair_paths
 
 
-def add_text_pair_to_collection_pipeline(
+def add_text_pair_to_collection(
     text_pair_path: Dict[LANG_CODE, Path], collection_path: Path
 ) -> None:
     """Add text pair to collection.
@@ -80,3 +90,33 @@ def add_text_pair_to_collection_pipeline(
     text_pair = collection.add_text_pair(text_pair)
     collection.save()
     collection.create_view(view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair)
+
+
+def pipeline(collection_path: Path) -> None:
+    """Create collection from monlamAI text pair tracker.
+
+    Args:
+        path: Path to the monlamAI text pair tracker path.
+        collection_path: Path to the collection.
+    """
+    text_pairs_tracker_path = download_monlamAI_textpairs_tracker_data()
+    text_pair_paths = get_text_pairs(text_pairs_tracker_path)
+    for text_pair_path in text_pair_paths:
+        add_text_pair_to_collection(text_pair_path, collection_path)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--collection-path",
+        type=str,
+        default=str(Path.home() / "monlamAI" / "collection"),
+        help="Path to the collection.",
+    )
+    args = parser.parse_args()
+
+    pipeline(
+        collection_path=Path(args.collection_path),
+    )
