@@ -1,7 +1,10 @@
+import os
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
 from typing import Dict
+
+from git import Repo, cmd
 
 from .collection import LANG_CODE, Collection, ViewsEnum
 from .utils import create_pecha
@@ -19,8 +22,31 @@ def find_text_pair_ids(path: Path) -> Generator[TEXT_PAIR, None, None]:
         yield {"bo": f"BO{id_:04d}", "en": f"EN{id_:04d}"}
 
 
-def download_text_pair(text_id: str) -> Path:
-    return Path("texts") / text_id
+def download_text(text_id: TEXT_ID) -> Path:
+    """Download text from monlamAI."""
+    github_username = os.environ["MAI_GITHUB_USERNAME"]
+    github_token = os.environ["MAI_GITHUB_TOKEN"]
+    github_org = os.environ["MAI_GITHUB_ORG"]
+    text_repo_url = (
+        f"htts://{github_username}:{github_token}@github.com/{github_org}/{text_id}.git"
+    )
+    local_text_repo_path = Path.home() / github_org / text_id
+    try:
+        Repo.clone_from(text_repo_url, str(local_text_repo_path))
+    except cmd.GitCommandError:
+        raise ValueError(f"Text {text_id} doesn't exist")
+    return local_text_repo_path
+
+
+def download_text_pair(
+    text_pair_ids: Generator[TEXT_PAIR, None, None],
+) -> Generator[TEXT_PAIR_PATH, None, None]:
+    """Download text pair from monlamAI."""
+    for text_pair_id in text_pair_ids:
+        text_pair_path = {}
+        for lang_code, text_id in text_pair_id.items():
+            text_pair_path[lang_code] = download_text(text_id)
+        yield text_pair_path
 
 
 def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
@@ -33,11 +59,8 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
         List of text pair paths.
     """
     text_pair_ids = find_text_pair_ids(path)
-    for text_pair_id in text_pair_ids:
-        text_pair_path = {}
-        for lang_code, text_id in text_pair_id.items():
-            text_pair_path[lang_code] = download_text_pair(text_id)
-        yield text_pair_path
+    text_pair_paths = download_text_pair(text_pair_ids)
+    return text_pair_paths
 
 
 def add_text_pair_to_collection_pipeline(

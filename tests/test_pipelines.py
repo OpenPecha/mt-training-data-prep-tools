@@ -1,8 +1,16 @@
+import os
 from pathlib import Path
 from unittest import mock
 
+import pytest
+from git.cmd import GitCommandError
+
 from op_mt_tools.collection import Collection, Metadata
-from op_mt_tools.pipelines import add_text_pair_to_collection_pipeline, get_text_pairs
+from op_mt_tools.pipelines import (
+    add_text_pair_to_collection_pipeline,
+    download_text,
+    get_text_pairs,
+)
 
 
 @mock.patch("op_mt_tools.collection.View")
@@ -47,11 +55,39 @@ def create_monlamAI_tracker_data(path, n):
     return path
 
 
-def test_get_text_pairs(tmp_path):
-    path = create_monlamAI_tracker_data(tmp_path, 4)
+@mock.patch("op_mt_tools.pipelines.download_text")
+def test_get_text_pairs(mock_download_text, tmp_path):
+    path = create_monlamAI_tracker_data(tmp_path, 4)  # creates only BO0002 and EN0002
+    text_download_path = tmp_path / "texts"
+    mock_download_text.return_value = text_download_path
 
     text_pair_paths = list(get_text_pairs(path))
 
-    assert text_pair_paths == [
-        {"bo": Path("texts") / "BO0002", "en": Path("texts") / "EN0002"},
-    ]
+    assert text_pair_paths == [{"bo": text_download_path, "en": text_download_path}]
+    assert mock_download_text.call_count == 2
+    assert mock.call("BO0002") in mock_download_text.call_args_list
+    assert mock.call("EN0002") in mock_download_text.call_args_list
+
+
+@mock.patch("op_mt_tools.pipelines.Repo")
+def test_download_text(mock_repo_class):
+    # arrange
+    os.environ["MAI_GITHUB_USERNAME"] = "test"
+    os.environ["MAI_GITHUB_TOKEN"] = "test"
+    os.environ["MAI_GITHUB_ORG"] = "test"
+    text_id = "BO0001"
+
+    # act
+    text_path = download_text(text_id)
+
+    # assert
+    assert text_path.name == text_id
+
+
+@mock.patch("op_mt_tools.pipelines.Repo")
+def test_download_text_text_not_found(mock_repo_class):
+    text_id = "BO0001"
+    mock_repo_class.clone_from.side_effect = GitCommandError("git", "clone")
+
+    # act and assert
+    pytest.raises(ValueError, download_text, text_id)
