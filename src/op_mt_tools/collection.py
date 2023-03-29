@@ -108,7 +108,7 @@ def text_pair_plaintext_serializer(
         pecha._opf_path = pecha._opf_path / f"{pecha_id}.opf"  # TODO: remove this hack
         pecha_view_path = output_path / pecha_id
         pecha_view_path.mkdir(parents=True, exist_ok=True)
-        for base_name in pecha.components:
+        for base_name in pecha.base_names_list:
             source_path = pecha.base_path / f"{base_name}.txt"
             target_path = pecha_view_path / f"{base_name}-{lang_code}.txt"
             shutil.copy(source_path, target_path)
