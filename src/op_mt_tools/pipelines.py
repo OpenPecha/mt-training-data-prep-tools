@@ -1,5 +1,4 @@
 import os
-import shutil
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
@@ -16,6 +15,7 @@ TEXT_PAIR_PATH = Dict[LANG_CODE, Path]
 
 
 def find_text_pair_ids(path: Path) -> Generator[TEXT_PAIR, None, None]:
+    print("[INFO] Finding completed text pairs...")
     text_ids = [int(fn.name[2:]) for fn in path.iterdir() if fn.suffix != ".md"]
     counter = Counter(text_ids)
     text_pair_ids = [text_id for text_id, count in counter.items() if count == 2]
@@ -23,19 +23,28 @@ def find_text_pair_ids(path: Path) -> Generator[TEXT_PAIR, None, None]:
         yield {"bo": f"BO{id_:04d}", "en": f"EN{id_:04d}"}
 
 
+def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
+    """Clone or pull repo."""
+    if local_repo_path.is_dir():
+        repo = Repo(local_repo_path)
+        repo.remotes.origin.pull()
+    else:
+        try:
+            Repo.clone_from(repo_url, str(local_repo_path))
+        except cmd.GitCommandError as e:
+            print(e)
+            raise ValueError(f"Repo({repo_url}) doesn't exist")
+
+
 def download_text(text_id: TEXT_ID) -> Path:
     """Download text from monlamAI."""
+    print(f"[INFO] Downloading text {text_id}...")
     github_username = os.environ["MAI_GITHUB_USERNAME"]
     github_token = os.environ["MAI_GITHUB_TOKEN"]
     github_org = os.environ["MAI_GITHUB_ORG"]
-    text_repo_url = (
-        f"htts://{github_username}:{github_token}@github.com/{github_org}/{text_id}.git"
-    )
+    text_repo_url = f"https://{github_username}:{github_token}@github.com/{github_org}/{text_id}.git"
     local_text_repo_path = Path.home() / github_org / text_id
-    try:
-        Repo.clone_from(text_repo_url, str(local_text_repo_path))
-    except cmd.GitCommandError:
-        raise ValueError(f"Text {text_id} doesn't exist")
+    clone_or_pull_repo(text_repo_url, local_text_repo_path)
     return local_text_repo_path
 
 
@@ -43,6 +52,7 @@ def download_text_pair(
     text_pair_ids: Generator[TEXT_PAIR, None, None],
 ) -> Generator[TEXT_PAIR_PATH, None, None]:
     """Download text pair from monlamAI."""
+    print("[INFO] Downloading text pairs...")
     for text_pair_id in text_pair_ids:
         text_pair_path = {}
         for lang_code, text_id in text_pair_id.items():
@@ -52,12 +62,11 @@ def download_text_pair(
 
 def download_monlamAI_textpairs_tracker_data() -> Path:
     """Download monlamAI tracker data."""
+    print("[INFO] Downloading monlamAI tracker data...")
+
     tracker_repo_url = "https://github.com/MonlamAI/TRACKER.git"
     local_tracker_repo_path = Path.home() / "MonlamAI" / "TRACKER"
-    if local_tracker_repo_path.is_dir():
-        shutil.rmtree(local_tracker_repo_path)
-    local_tracker_repo_path.mkdir(parents=True, exist_ok=True)
-    Repo.clone_from(tracker_repo_url, str(local_tracker_repo_path))
+    clone_or_pull_repo(tracker_repo_url, local_tracker_repo_path)
     textpairs_tracker_path = local_tracker_repo_path / "mt" / "mt-extracted-text-pairs"
     return textpairs_tracker_path
 
@@ -71,6 +80,7 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
     Returns:
         List of text pair paths.
     """
+    print("[INFO] Getting text pairs...")
     text_pair_ids = find_text_pair_ids(path)
     text_pair_paths = download_text_pair(text_pair_ids)
     return text_pair_paths
@@ -85,6 +95,8 @@ def add_text_pair_to_collection(
         collection_path: Path to the collection.
         text_pair_path: Path to the text pair.
     """
+    text_pair_ids = [fn.name for fn in text_pair_path.values()]
+    print(f"[INFO] Adding text pair {text_pair_ids} to collection...")
     text_pair = {}
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path)
@@ -102,6 +114,7 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
         path: Path to the monlamAI text pair tracker path.
         collection_path: Path to the collection.
     """
+    print("[INFO] Pipeline running...")
     text_pairs_tracker_path = download_monlamAI_textpairs_tracker_data()
     text_pair_paths = get_text_pairs(text_pairs_tracker_path)
     for text_pair_path in text_pair_paths:
