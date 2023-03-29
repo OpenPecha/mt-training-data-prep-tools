@@ -9,7 +9,7 @@ OPEN_PECHA_ID = str  # OpenPecha open pecha id
 
 
 def create_pecha(
-    path: Path, output_path=None, publish=True
+    path: Path, output_path: Path = None, publish=True
 ) -> Tuple[INITIAL_PECHA_ID, OPEN_PECHA_ID]:
     """create InitialPecha and OpenPecha from text files in path.
 
@@ -24,10 +24,11 @@ def create_pecha(
     initial_pecha_meta = metadata.InitialPechaMetadata()
     open_pecha_meta = metadata.OpenPechaMetadata()
 
+    OpenPechaGitRepo.is_private = (
+        True  # TODO: make self.publish accept is_private param
+    )
     initial_pecha = OpenPechaGitRepo(metadata=initial_pecha_meta)
     open_pecha = OpenPechaGitRepo(metadata=open_pecha_meta)
-    initial_pecha.is_private = True
-    open_pecha.is_private = True
 
     for fn in path.glob("*.txt"):
         text = fn.read_text(encoding="utf-8")

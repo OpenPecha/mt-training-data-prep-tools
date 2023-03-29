@@ -13,6 +13,9 @@ TEXT_ID = str
 TEXT_PAIR = Dict[LANG_CODE, TEXT_ID]
 TEXT_PAIR_PATH = Dict[LANG_CODE, Path]
 
+DATA_PATH = Path.home() / ".monlamAI" / "data"
+DATA_PATH.mkdir(parents=True, exist_ok=True)
+
 
 def find_text_pair_ids(path: Path) -> Generator[TEXT_PAIR, None, None]:
     print("[INFO] Finding completed text pairs...")
@@ -39,11 +42,11 @@ def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
 def download_text(text_id: TEXT_ID) -> Path:
     """Download text from monlamAI."""
     print(f"[INFO] Downloading text {text_id}...")
-    github_username = os.environ["MAI_GITHUB_USERNAME"]
-    github_token = os.environ["MAI_GITHUB_TOKEN"]
+    github_username = os.environ["GITHUB_USERNAME"]
+    github_token = os.environ["GITHUB_TOKEN"]
     github_org = os.environ["MAI_GITHUB_ORG"]
     text_repo_url = f"https://{github_username}:{github_token}@github.com/{github_org}/{text_id}.git"
-    local_text_repo_path = Path.home() / github_org / text_id
+    local_text_repo_path = DATA_PATH / "texts" / text_id
     clone_or_pull_repo(text_repo_url, local_text_repo_path)
     return local_text_repo_path
 
@@ -65,7 +68,7 @@ def download_monlamAI_textpairs_tracker_data() -> Path:
     print("[INFO] Downloading monlamAI tracker data...")
 
     tracker_repo_url = "https://github.com/MonlamAI/TRACKER.git"
-    local_tracker_repo_path = Path.home() / "MonlamAI" / "TRACKER"
+    local_tracker_repo_path = DATA_PATH / "TRACKER"
     clone_or_pull_repo(tracker_repo_url, local_tracker_repo_path)
     textpairs_tracker_path = local_tracker_repo_path / "mt" / "mt-extracted-text-pairs"
     return textpairs_tracker_path
@@ -98,8 +101,9 @@ def add_text_pair_to_collection(
     text_pair_ids = [fn.name for fn in text_pair_path.values()]
     print(f"[INFO] Adding text pair {text_pair_ids} to the collection...")
     text_pair = {}
+    output_path = DATA_PATH / "pechas"
     for lang_code, path in text_pair_path.items():
-        _, open_pecha_id = create_pecha(path)
+        _, open_pecha_id = create_pecha(path, output_path=output_path)
         text_pair[lang_code] = open_pecha_id
     collection = Collection(path=collection_path)
     text_pair = collection.add_text_pair(text_pair)
