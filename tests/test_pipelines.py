@@ -101,5 +101,10 @@ def test_download_monlamAI_tracker_data(mock_repo_class):
 
     assert (
         textpairs_tracker_path
-        == Path.home() / "MonlamAI" / "TRACKER" / "mt" / "mt-extracted-text-pairs"
+        == Path.home()
+        / ".monlamAI"
+        / "data"
+        / "TRACKER"
+        / "mt"
+        / "mt-extracted-text-pairs"
     )

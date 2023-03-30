@@ -119,6 +119,10 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
         collection_path: Path to the collection.
     """
     print("[INFO] Pipeline running...")
+
+    if not collection_path.is_dir():
+        raise ValueError(f"Collection doesn't exist at {collection_path.resolve()}")
+
     text_pairs_tracker_path = download_monlamAI_textpairs_tracker_data()
     text_pair_paths = get_text_pairs(text_pairs_tracker_path)
     for text_pair_path in text_pair_paths:

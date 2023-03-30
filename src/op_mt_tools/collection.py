@@ -7,6 +7,8 @@ from openpecha.core import ids as op_ids
 from openpecha.core.pecha import OpenPechaGitRepo
 from openpecha.utils import dump_yaml, load_yaml
 
+from .utils import get_pkg_version
+
 LANG_CODE = str  # "bo" or "en"
 PECHA_ID = str  # openpecha pecha id
 
@@ -16,15 +18,15 @@ class Metadata:
         self,
         title: str,
         id: str = op_ids.get_collection_id(),
-        created_at: datetime = datetime.now(),
-        updated_at: datetime = datetime.now(),
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
         items: List[Dict[LANG_CODE, PECHA_ID]] = [],
     ):
         self.id = id
         self.title = title
-        self.created_at = created_at
-        self.updated_at = updated_at
-        self.items = items
+        self.created_at = created_at if created_at else datetime.now()
+        self.updated_at = updated_at if updated_at else datetime.now()
+        self.items = items if items else []
 
     def to_dict(self) -> dict:
         return {
@@ -52,16 +54,16 @@ class ViewMetadata:
     def __init__(
         self,
         id: str,
-        serializer: str,
-        views_path: Path,
-        created_at: datetime = datetime.now(),
-        updated_at: datetime = datetime.now(),
+        serializer: Optional[str] = None,
+        views_path: Optional[Path] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         self.id = id
-        self.created_at = created_at
-        self.updated_at = updated_at
+        self.created_at = created_at if created_at else datetime.now()
+        self.updated_at = updated_at if updated_at else datetime.now()
         self.serializer = serializer
-        self.views_path = views_path
+        self.views_path = views_path if views_path else Path("views") / self.id
 
     def to_dict(self) -> dict:
         return {
@@ -115,6 +117,15 @@ def text_pair_plaintext_serializer(
     return output_path
 
 
+def get_serializer_path(serializer_name: str) -> str:
+    serializer = SERIALIZERS_REGISTRY.get(serializer_name)
+    if not serializer:
+        raise ValueError(f"Serializer {serializer_name} not found.")
+    pkg_name = Path(__file__).parent.name
+    sub_pkg_name = Path(__file__).stem
+    return f"{pkg_name}.{sub_pkg_name}.{serializer.__name__}@{get_pkg_version()}"
+
+
 class View:
     """Class to represent a view of a collection.
 
@@ -158,11 +169,18 @@ class View:
     def metadata(self) -> ViewMetadata:
         if self._metadata:
             return self._metadata
-        self._metadata = ViewMetadata.from_dict(load_yaml(self.meta_fn))
+        if self.meta_fn.is_file():
+            self._metadata = ViewMetadata.from_dict(load_yaml(self.meta_fn))
+        else:
+            if self._id:
+                self._metadata = ViewMetadata(id=self._id)
+            else:
+                raise ValueError("Either id or metadata must be provided.")
         return self._metadata
 
     def save_metadata(self):
         self.metadata.updated_at = datetime.now()
+        self.serializer = get_serializer_path(self.id_)
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
 
     def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:

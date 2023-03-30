@@ -43,3 +43,14 @@ def create_pecha(
         open_pecha.publish()
 
     return initial_pecha.pecha_id, open_pecha.pecha_id
+
+
+def get_pkg_version():
+    """get metadata of package
+
+    Returns:
+        dict: metadata of package
+    """
+    import pkg_resources
+
+    return pkg_resources.get_distribution("op-mt-tools").version
