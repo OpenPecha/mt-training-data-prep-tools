@@ -31,6 +31,7 @@ None
 - `GITHUB_EMAIL`: github verified email
 - `GITHUB_TOKEN`: github token with read and write access to [MonlamAI](https://github.com/MonlamAI) repos.
 - `MAI_GITHUB_ORG`: MonlamAI github org name
+- `OPENPECHA_DATA_GITHUB_ORG`: openpecha data github org which is `OpenPecha-Data`
 
 ### Installation
 
@@ -41,7 +42,7 @@ pip install https://github.com/OpenPecha/mt-training-data-prep-tools/archive/mai
 ### Usage
 
 ```bash
-python op_mt_tools.cli.add_texts_pair <collection_path>
+python -m op_mt_tools.cli.add_texts_pair <collection_path>
 ```
 
 Read the docs [here](https://wiki.openpecha.org).
