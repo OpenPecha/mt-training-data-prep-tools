@@ -73,8 +73,8 @@ def test_get_text_pairs(mock_download_text, tmp_path):
 @mock.patch("op_mt_tools.pipelines.Repo")
 def test_download_text(mock_repo_class):
     # arrange
-    os.environ["MAI_GITHUB_USERNAME"] = "test"
-    os.environ["MAI_GITHUB_TOKEN"] = "test"
+    os.environ["GITHUB_USERNAME"] = "test"
+    os.environ["GITHUB_TOKEN"] = "test"
     os.environ["MAI_GITHUB_ORG"] = "test"
     text_id = "BO0001"
 
