@@ -180,7 +180,7 @@ class View:
 
     def save_metadata(self):
         self.metadata.updated_at = datetime.now()
-        self.serializer = get_serializer_path(self.id_)
+        self.metadata.serializer = get_serializer_path(self.id_)
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
 
     def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
@@ -245,6 +245,7 @@ class Collection:
         self, text_pair: Dict[LANG_CODE, PECHA_ID]
     ) -> Dict[LANG_CODE, PECHA_ID]:
         self.metadata.items.append(text_pair)
+        self.metadata.updated_at = datetime.now()
         return text_pair
 
     def get_text_pairs(self) -> List[Dict[LANG_CODE, PECHA_ID]]:
