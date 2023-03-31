@@ -7,8 +7,11 @@ from openpecha.core import ids as op_ids
 from openpecha.core.pecha import OpenPechaGitRepo
 from openpecha.utils import dump_yaml, load_yaml
 
+from .utils import get_pkg_version
+
 LANG_CODE = str  # "bo" or "en"
 PECHA_ID = str  # openpecha pecha id
+TEXT_ID = str  # text id (without lang prefix) defined by MonalamAI project
 
 
 class Metadata:
@@ -16,15 +19,17 @@ class Metadata:
         self,
         title: str,
         id: str = op_ids.get_collection_id(),
-        created_at: datetime = datetime.now(),
-        updated_at: datetime = datetime.now(),
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
         items: List[Dict[LANG_CODE, PECHA_ID]] = [],
+        imported_texts: List[str] = [],
     ):
         self.id = id
         self.title = title
-        self.created_at = created_at
-        self.updated_at = updated_at
-        self.items = items
+        self.created_at = created_at if created_at else datetime.now()
+        self.updated_at = updated_at if updated_at else datetime.now()
+        self.items = items if items else []
+        self.imported_texts = imported_texts if imported_texts else []
 
     def to_dict(self) -> dict:
         return {
@@ -33,6 +38,7 @@ class Metadata:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "items": self.items,
+            "imported_texts": self.imported_texts,
         }
 
     @classmethod
@@ -43,6 +49,7 @@ class Metadata:
             created_at=data["created_at"],
             updated_at=data["updated_at"],
             items=data["items"],
+            imported_texts=data["imported_texts"],
         )
 
 
@@ -52,16 +59,16 @@ class ViewMetadata:
     def __init__(
         self,
         id: str,
-        serializer: str,
-        views_path: Path,
-        created_at: datetime = datetime.now(),
-        updated_at: datetime = datetime.now(),
+        serializer: Optional[str] = None,
+        views_path: Optional[Path] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         self.id = id
-        self.created_at = created_at
-        self.updated_at = updated_at
+        self.created_at = created_at if created_at else datetime.now()
+        self.updated_at = updated_at if updated_at else datetime.now()
         self.serializer = serializer
-        self.views_path = views_path
+        self.views_path = views_path if views_path else Path("views") / self.id
 
     def to_dict(self) -> dict:
         return {
@@ -108,11 +115,20 @@ def text_pair_plaintext_serializer(
         pecha._opf_path = pecha._opf_path / f"{pecha_id}.opf"  # TODO: remove this hack
         pecha_view_path = output_path / pecha_id
         pecha_view_path.mkdir(parents=True, exist_ok=True)
-        for base_name in pecha.components:
+        for base_name in pecha.base_names_list:
             source_path = pecha.base_path / f"{base_name}.txt"
             target_path = pecha_view_path / f"{base_name}-{lang_code}.txt"
             shutil.copy(source_path, target_path)
     return output_path
+
+
+def get_serializer_path(serializer_name: str) -> str:
+    serializer = SERIALIZERS_REGISTRY.get(serializer_name)
+    if not serializer:
+        raise ValueError(f"Serializer {serializer_name} not found.")
+    pkg_name = Path(__file__).parent.name
+    sub_pkg_name = Path(__file__).stem
+    return f"{pkg_name}.{sub_pkg_name}.{serializer.__name__}@{get_pkg_version()}"
 
 
 class View:
@@ -158,11 +174,18 @@ class View:
     def metadata(self) -> ViewMetadata:
         if self._metadata:
             return self._metadata
-        self._metadata = ViewMetadata.from_dict(load_yaml(self.meta_fn))
+        if self.meta_fn.is_file():
+            self._metadata = ViewMetadata.from_dict(load_yaml(self.meta_fn))
+        else:
+            if self._id:
+                self._metadata = ViewMetadata(id=self._id)
+            else:
+                raise ValueError("Either id or metadata must be provided.")
         return self._metadata
 
     def save_metadata(self):
         self.metadata.updated_at = datetime.now()
+        self.metadata.serializer = get_serializer_path(self.id_)
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
 
     def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
@@ -223,10 +246,17 @@ class Collection:
         self._metadata = Metadata.from_dict(load_yaml(self.meta_fn))
         return self._metadata
 
+    def is_text_added(self, text_id: TEXT_ID) -> bool:
+        if text_id in self.metadata.imported_texts:
+            return True
+        return False
+
     def add_text_pair(
-        self, text_pair: Dict[LANG_CODE, PECHA_ID]
+        self, text_pair: Dict[LANG_CODE, PECHA_ID], text_id: TEXT_ID
     ) -> Dict[LANG_CODE, PECHA_ID]:
         self.metadata.items.append(text_pair)
+        self.metadata.imported_texts.append(text_id)
+        self.metadata.updated_at = datetime.now()
         return text_pair
 
     def get_text_pairs(self) -> List[Dict[LANG_CODE, PECHA_ID]]:
