@@ -39,8 +39,8 @@ def create_pecha(
     open_pecha.save(output_path=output_path)
 
     if publish:
-        initial_pecha.publish()
-        open_pecha.publish()
+        initial_pecha.publish(branch="master")
+        open_pecha.publish(branch="master")
 
     return initial_pecha.pecha_id, open_pecha.pecha_id
 
