@@ -11,6 +11,7 @@ from .utils import get_pkg_version
 
 LANG_CODE = str  # "bo" or "en"
 PECHA_ID = str  # openpecha pecha id
+TEXT_ID = str  # text id (without lang prefix) defined by MonalamAI project
 
 
 class Metadata:
@@ -21,12 +22,14 @@ class Metadata:
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         items: List[Dict[LANG_CODE, PECHA_ID]] = [],
+        imported_texts: List[str] = [],
     ):
         self.id = id
         self.title = title
         self.created_at = created_at if created_at else datetime.now()
         self.updated_at = updated_at if updated_at else datetime.now()
         self.items = items if items else []
+        self.imported_texts = imported_texts if imported_texts else []
 
     def to_dict(self) -> dict:
         return {
@@ -35,6 +38,7 @@ class Metadata:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "items": self.items,
+            "imported_texts": self.imported_texts,
         }
 
     @classmethod
@@ -45,6 +49,7 @@ class Metadata:
             created_at=data["created_at"],
             updated_at=data["updated_at"],
             items=data["items"],
+            imported_texts=data["imported_texts"],
         )
 
 
@@ -241,10 +246,16 @@ class Collection:
         self._metadata = Metadata.from_dict(load_yaml(self.meta_fn))
         return self._metadata
 
+    def is_text_added(self, text_id: TEXT_ID) -> bool:
+        if text_id in self.metadata.imported_texts:
+            return True
+        return False
+
     def add_text_pair(
-        self, text_pair: Dict[LANG_CODE, PECHA_ID]
+        self, text_pair: Dict[LANG_CODE, PECHA_ID], text_id: TEXT_ID
     ) -> Dict[LANG_CODE, PECHA_ID]:
         self.metadata.items.append(text_pair)
+        self.metadata.imported_texts.append(text_id)
         self.metadata.updated_at = datetime.now()
         return text_pair
 

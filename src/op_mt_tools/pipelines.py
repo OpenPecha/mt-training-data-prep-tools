@@ -90,7 +90,7 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
 
 
 def add_text_pair_to_collection(
-    text_pair_path: Dict[LANG_CODE, Path], collection_path: Path
+    text_pair_path: TEXT_PAIR_PATH, collection_path: Path
 ) -> None:
     """Add text pair to collection.
 
@@ -99,14 +99,24 @@ def add_text_pair_to_collection(
         text_pair_path: Path to the text pair.
     """
     text_pair_ids = [fn.name for fn in text_pair_path.values()]
+    collection = Collection(path=collection_path)
+    text_id = text_pair_ids[0]
+    if collection.is_text_added(text_id):
+        print(
+            f"[INFO] Adding text pair {text_pair_ids} is already to the collection..."
+        )
+        return
+
     print(f"[INFO] Adding text pair {text_pair_ids} to the collection...")
+
     text_pair = {}
     output_path = DATA_PATH / "pechas"
+    text_id = text_pair_ids[0]
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path, output_path=output_path)
         text_pair[lang_code] = open_pecha_id
-    collection = Collection(path=collection_path)
-    text_pair = collection.add_text_pair(text_pair)
+
+    text_pair = collection.add_text_pair(text_pair, text_id)
     collection.save()
     collection.create_view(view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair)
 

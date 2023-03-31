@@ -33,6 +33,7 @@ def test_metadata():
         created_at=created_at,
         updated_at=updated_at,
         items=[{"bo": "P000001", "en": "P000002"}],
+        imported_texts=["0001", "0002"],
     )
     assert metadata.to_dict() == {
         "id": "test",
@@ -40,6 +41,7 @@ def test_metadata():
         "created_at": created_at,
         "updated_at": updated_at,
         "items": [{"bo": "P000001", "en": "P000002"}],
+        "imported_texts": ["0001", "0002"],
     }
     assert metadata.to_dict() == Metadata.from_dict(metadata.to_dict()).to_dict()
 
@@ -51,13 +53,13 @@ def test_collection_init_fail():
 
 def test_collection_add_text_pair(collection_path):
     collection = Collection(collection_path)
-    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"}, "0001")
     assert collection.metadata.items == [{"bo": "P000001", "en": "P000002"}]
 
 
 def test_collection_get_text_pairs(collection_path):
     collection = Collection(collection_path)
-    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"}, "0001")
     assert collection.get_text_pairs() == [{"bo": "P000001", "en": "P000002"}]
 
 
@@ -70,7 +72,7 @@ def test_collection_save(tmp_path):
     collection = Collection(
         metadata=metadata,
     )
-    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"}, "0001")
     collection.save(output_path=tmp_path)
     assert collection.meta_fn.exists()
 
@@ -83,7 +85,7 @@ def test_collection_create_new(tmp_path):
         title="test",
     )
     collection = Collection(metadata=metadata)
-    collection.add_text_pair({"bo": "P000001", "en": "P000002"})
+    collection.add_text_pair({"bo": "P000001", "en": "P000002"}, "0001")
     collection.save(output_path=tmp_path)
 
     assert collection.meta_fn.exists()
@@ -230,3 +232,11 @@ def test_get_serializer_path():
         path
         == f"op_mt_tools.collection.text_pair_plaintext_serializer@{utils.get_pkg_version()}"
     )
+
+
+def test_collection_is_text_added():
+    metadata = Metadata(title="title", imported_texts=["BO0001"])
+    collection = Collection(metadata=metadata)
+
+    assert collection.is_text_added("BO0001")
+    assert not collection.is_text_added("EN0001")
