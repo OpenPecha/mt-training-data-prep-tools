@@ -109,7 +109,10 @@ class ViewsEnum:
 def text_pair_plaintext_serializer(
     text_pair: Dict[LANG_CODE, PECHA_ID],
     output_path: Path,
-) -> Path:
+) -> Dict[LANG_CODE, Path]:
+    """Serialize a text pair to plaintext."""
+
+    text_pair_view_path = {}
     for lang_code, pecha_id in text_pair.items():
         pecha = OpenPechaGitRepo(pecha_id)
         pecha._opf_path = pecha._opf_path / f"{pecha_id}.opf"  # TODO: remove this hack
@@ -119,7 +122,8 @@ def text_pair_plaintext_serializer(
             source_path = pecha.base_path / f"{base_name}.txt"
             target_path = pecha_view_path / f"{base_name}-{lang_code}.txt"
             shutil.copy(source_path, target_path)
-    return output_path
+        text_pair_view_path[lang_code] = pecha_view_path
+    return text_pair_view_path
 
 
 def get_serializer_path(serializer_name: str) -> str:
@@ -188,13 +192,13 @@ class View:
         self.metadata.serializer = get_serializer_path(self.id_)
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
 
-    def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
+    def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Dict[LANG_CODE, Path]:
         self.save_metadata()
         serializer = SERIALIZERS_REGISTRY.get(self.id_)
         if serializer is None:
             raise ValueError(f"Serializer for {self.id_} not found.")
-        output_path = serializer(text_pair, self.path)
-        return output_path
+        text_pair_view_path = serializer(text_pair, self.path)
+        return text_pair_view_path
 
 
 class Collection:
@@ -277,7 +281,9 @@ class Collection:
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
         return self.path
 
-    def create_view(self, view_id: str, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Path:
+    def create_view(
+        self, view_id: str, text_pair: Dict[LANG_CODE, PECHA_ID]
+    ) -> Dict[LANG_CODE, Path]:
         view = View(base_path=self.views_path, id=view_id)
-        view_path = view.generate(text_pair)
-        return view_path
+        text_pair_view_path = view.generate(text_pair)
+        return text_pair_view_path

@@ -89,6 +89,10 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
     return text_pair_paths
 
 
+def create_monlamAI_TM(text_pair_path: Dict[LANG_CODE, Path], text_id: str) -> None:
+    pass
+
+
 def add_text_pair_to_collection(
     text_pair_path: TEXT_PAIR_PATH, collection_path: Path
 ) -> None:
@@ -118,7 +122,10 @@ def add_text_pair_to_collection(
 
     text_pair = collection.add_text_pair(text_pair, text_id)
     collection.save()
-    collection.create_view(view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair)
+    text_pair_view_path = collection.create_view(
+        view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
+    )
+    create_monlamAI_TM(text_pair_view_path, text_id)
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
