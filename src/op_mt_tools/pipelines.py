@@ -125,7 +125,8 @@ def add_text_pair_to_collection(
     text_pair_view_path = collection.create_view(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
-    create_monlamAI_TM(text_pair_view_path, text_id)
+    text_id_no_prefix = text_id[2:]
+    create_monlamAI_TM(text_pair_view_path, text_id_no_prefix)
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
