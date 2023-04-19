@@ -2,16 +2,18 @@ import os
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Tuple
 
 from git import Repo, cmd
 
 from .collection import LANG_CODE, Collection, ViewsEnum
 from .utils import create_pecha
 
-TEXT_ID = str
+TEXT_ID = str  # e.g. "BO0001" EN0001
+TEXT_ID_NO_PREFIX = str  # e.g. "BO0001" -> "0001"
 TEXT_PAIR = Dict[LANG_CODE, TEXT_ID]
 TEXT_PAIR_PATH = Dict[LANG_CODE, Path]
+TEXT_PAIR_VIEW_PATH = Dict[LANG_CODE, Path]
 
 DATA_PATH = Path.home() / ".monlamAI" / "data"
 DATA_PATH.mkdir(parents=True, exist_ok=True)
@@ -89,13 +91,17 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
     return text_pair_paths
 
 
-def create_monlamAI_TM(text_pair_path: Dict[LANG_CODE, Path], text_id: str) -> None:
-    pass
+def commit_and_push(collection_path: Path) -> None:
+    """Commit and push collection."""
+    repo = Repo(collection_path)
+    repo.git.add(".", "--all")
+    repo.git.commit("-m", "Add text pair")
+    repo.remotes.origin.push()
 
 
 def add_text_pair_to_collection(
     text_pair_path: TEXT_PAIR_PATH, collection_path: Path
-) -> None:
+) -> Tuple[TEXT_ID_NO_PREFIX, TEXT_PAIR_VIEW_PATH]:
     """Add text pair to collection.
 
     Args:
@@ -106,10 +112,8 @@ def add_text_pair_to_collection(
     collection = Collection(path=collection_path)
     text_id = text_pair_ids[0]
     if collection.is_text_added(text_id):
-        print(
-            f"[INFO] Adding text pair {text_pair_ids} is already to the collection..."
-        )
-        return
+        print(f"[INFO] Text pair {text_pair_ids} is already to the collection...")
+        return "", {}
 
     print(f"[INFO] Adding text pair {text_pair_ids} to the collection...")
 
@@ -125,8 +129,12 @@ def add_text_pair_to_collection(
     text_pair_view_path = collection.create_view(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
-    text_id_no_prefix = text_id[2:]
-    create_monlamAI_TM(text_pair_view_path, text_id_no_prefix)
+    commit_and_push(collection_path)
+    return text_id[2:], text_pair_view_path
+
+
+def create_monlamAI_TM(text_pair_path: Dict[LANG_CODE, Path], text_id: str) -> None:
+    pass
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
@@ -144,4 +152,9 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
     text_pairs_tracker_path = download_monlamAI_textpairs_tracker_data()
     text_pair_paths = get_text_pairs(text_pairs_tracker_path)
     for text_pair_path in text_pair_paths:
-        add_text_pair_to_collection(text_pair_path, collection_path)
+        text_id, text_pair_view_path = add_text_pair_to_collection(
+            text_pair_path, collection_path
+        )
+        if not text_id:
+            continue
+        create_monlamAI_TM(text_pair_view_path, text_id)

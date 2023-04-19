@@ -14,9 +14,12 @@ from op_mt_tools.pipelines import (
 )
 
 
+@mock.patch("op_mt_tools.pipelines.commit_and_push")
 @mock.patch("op_mt_tools.collection.View")
 @mock.patch("op_mt_tools.pipelines.create_pecha")
-def test_add_text_pair_to_collection(mock_create_pecha, mock_view, tmp_path):
+def test_add_text_pair_to_collection(
+    mock_create_pecha, mock_view, mock_commit_and_push, tmp_path
+):
     # IGNORE: arrange boilerplate
     collection_id = "collection"
     metadata = Metadata(
