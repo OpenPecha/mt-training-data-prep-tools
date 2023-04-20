@@ -1,4 +1,5 @@
 import os
+import subprocess
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
@@ -94,6 +95,9 @@ def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
 
 def commit_and_push(collection_path: Path) -> None:
     """Commit and push collection."""
+    # configure git users
+    subprocess.run(f"git config --global user.name {os.environ['GITHUB_USERNAME']}")
+    subprocess.run(f"git config --global user.email {os.environ['GITHUB_EMAIL']}")
     repo = Repo(collection_path)
     repo.git.add(".", "--all")
     repo.git.commit("-m", "Add text pair")
