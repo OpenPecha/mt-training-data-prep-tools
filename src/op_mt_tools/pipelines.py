@@ -2,8 +2,9 @@ import os
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
+import requests
 from git import Repo, cmd
 
 from .collection import LANG_CODE, Collection, ViewsEnum
@@ -150,12 +151,24 @@ def get_raw_github_file_url(local_view_path: Path):
     )
 
 
-def create_monlamAI_TM(text_pair_path: Dict[LANG_CODE, Path], text_id: str) -> None:
+def create_monlamAI_TM(
+    text_pair_view_path: Dict[LANG_CODE, Path], text_id: str
+) -> Optional[dict]:
     request_body = {
         "text_id": text_id,
     }
-    for lang_code, view_path in text_pair_path.items():
-        request_body[lang_code] = get_raw_github_file_url(view_path)
+    for lang_code, view_path in text_pair_view_path.items():
+        request_body[f"{lang_code}_file_url"] = get_raw_github_file_url(view_path)
+
+    r = requests.post(
+        "https://openpecha-tibetan-aligner.hf.space/run/align",
+        json={"data": [request_body]},
+    )
+    if r.status_code != requests.codes.ok:
+        print(f"[ERROR] Failed to algin {text_id}. Error code {r.status_code}")
+        return None
+    else:
+        return r.json()["data"]
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:

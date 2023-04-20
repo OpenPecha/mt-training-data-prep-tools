@@ -8,6 +8,7 @@ from git.cmd import GitCommandError
 from op_mt_tools.collection import Collection, Metadata
 from op_mt_tools.pipelines import (
     add_text_pair_to_collection,
+    create_monlamAI_TM,
     download_monlamAI_textpairs_tracker_data,
     download_text,
     get_raw_github_file_url,
@@ -126,3 +127,22 @@ def test_get_raw_github_file_url(tmp_path):
         raw_gh_file_url
         == "https://raw.githubusercontent.com/OpenPecha-Data/C1A81F448/main/C1A81F448.opc/views/plaintext/O192F059E/test-en.txt"  # noqa
     )
+
+
+@mock.patch("op_mt_tools.pipelines.requests")
+def test_create_monlamAI_TM(mock_requests, tmp_path):
+    en_view_path = tmp_path / "C1A81F448/C1A81F448.opc/views/plaintext/O192F059E"
+    en_view_path.mkdir(parents=True)
+    en_view_fn = en_view_path / "6555-en.txt"
+    en_view_fn.write_text("test content")
+    bo_view_path = tmp_path / "C1A81F448/C1A81F448.opc/views/plaintext/O66BF9EDC"
+    bo_view_path.mkdir(parents=True)
+    bo_view_fn = bo_view_path / "BAF9-bo.txt"
+    bo_view_fn.write_text("test content")
+
+    text_pair_view_path = {"bo": bo_view_path, "en": en_view_path}
+
+    data = create_monlamAI_TM(
+        text_id="test_form_tools", text_pair_view_path=text_pair_view_path
+    )
+    assert not data
