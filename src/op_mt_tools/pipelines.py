@@ -133,8 +133,29 @@ def add_text_pair_to_collection(
     return text_id[2:], text_pair_view_path
 
 
+def get_raw_github_file_url(local_view_path: Path):
+    """Get raw github file url.
+
+    Args:
+        view_file: Path to the view file. eg: parent/C1A81F448/C1A81F448.opc/views/plaintext/O192F059E/6555-en.txt
+
+    Returns:
+        Raw github file url.
+    """
+    local_view_fn = list(local_view_path.iterdir())[0]
+    repo_name = local_view_fn.parts[-6]
+    view_fn = "/".join(local_view_fn.parts[-5:])
+    return (
+        f"https://raw.githubusercontent.com/OpenPecha-Data/{repo_name}/main/{view_fn}"
+    )
+
+
 def create_monlamAI_TM(text_pair_path: Dict[LANG_CODE, Path], text_id: str) -> None:
-    pass
+    request_body = {
+        "text_id": text_id,
+    }
+    for lang_code, view_path in text_pair_path.items():
+        request_body[lang_code] = get_raw_github_file_url(view_path)
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:

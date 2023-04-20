@@ -10,6 +10,7 @@ from op_mt_tools.pipelines import (
     add_text_pair_to_collection,
     download_monlamAI_textpairs_tracker_data,
     download_text,
+    get_raw_github_file_url,
     get_text_pairs,
 )
 
@@ -110,4 +111,18 @@ def test_download_monlamAI_tracker_data(mock_repo_class):
         / "TRACKER"
         / "mt"
         / "mt-extracted-text-pairs"
+    )
+
+
+def test_get_raw_github_file_url(tmp_path):
+    view_path = tmp_path / "C1A81F448/C1A81F448.opc/views/plaintext/O192F059E"
+    view_path.mkdir(parents=True)
+    view_fn = view_path / "test-en.txt"
+    view_fn.write_text("test content")
+
+    raw_gh_file_url = get_raw_github_file_url(view_path)
+
+    assert (
+        raw_gh_file_url
+        == "https://raw.githubusercontent.com/OpenPecha-Data/C1A81F448/main/C1A81F448.opc/views/plaintext/O192F059E/test-en.txt"  # noqa
     )
