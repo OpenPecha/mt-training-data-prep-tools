@@ -7,11 +7,8 @@ from openpecha.core import ids as op_ids
 from openpecha.core.pecha import OpenPechaGitRepo
 from openpecha.utils import dump_yaml, load_yaml
 
+from . import types as t
 from .utils import get_pkg_version
-
-LANG_CODE = str  # "bo" or "en"
-PECHA_ID = str  # openpecha pecha id
-TEXT_ID = str  # text id (without lang prefix) defined by MonalamAI project
 
 
 class Metadata:
@@ -21,8 +18,8 @@ class Metadata:
         id: str = op_ids.get_collection_id(),
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
-        items: List[Dict[LANG_CODE, PECHA_ID]] = [],
-        imported_texts: List[Dict[TEXT_ID, PECHA_ID]] = [],
+        items: List[Dict[t.LANG_CODE, t.PECHA_ID]] = [],
+        imported_texts: List[Dict[t.TEXT_ID, t.PECHA_ID]] = [],
     ):
         self.id = id
         self.title = title
@@ -107,9 +104,9 @@ class ViewsEnum:
 
 @register_serializer(ViewsEnum.PLAINTEXT)
 def text_pair_plaintext_serializer(
-    text_pair: Dict[LANG_CODE, PECHA_ID],
+    text_pair: Dict[t.LANG_CODE, t.PECHA_ID],
     output_path: Path,
-) -> Dict[LANG_CODE, Path]:
+) -> Dict[t.LANG_CODE, Path]:
     """Serialize a text pair to plaintext."""
 
     text_pair_view_path = {}
@@ -192,7 +189,9 @@ class View:
         self.metadata.serializer = get_serializer_path(self.id_)
         dump_yaml(self.metadata.to_dict(), self.meta_fn)
 
-    def generate(self, text_pair: Dict[LANG_CODE, PECHA_ID]) -> Dict[LANG_CODE, Path]:
+    def generate(
+        self, text_pair: Dict[t.LANG_CODE, t.PECHA_ID]
+    ) -> Dict[t.LANG_CODE, Path]:
         self.save_metadata()
         serializer = SERIALIZERS_REGISTRY.get(self.id_)
         if serializer is None:
@@ -250,7 +249,7 @@ class Collection:
         self._metadata = Metadata.from_dict(load_yaml(self.meta_fn))
         return self._metadata
 
-    def is_text_added(self, text_id: TEXT_ID) -> bool:
+    def is_text_added(self, text_id: t.TEXT_ID) -> bool:
         text_id = (
             text_id
             if text_id.startswith("BO") or text_id.startswith("EN")
@@ -262,8 +261,8 @@ class Collection:
         return False
 
     def add_text_pair(
-        self, text_pair: Dict[LANG_CODE, PECHA_ID], text_id: TEXT_ID
-    ) -> Dict[LANG_CODE, PECHA_ID]:
+        self, text_pair: Dict[t.LANG_CODE, t.PECHA_ID], text_id: t.TEXT_ID
+    ) -> Dict[t.LANG_CODE, t.PECHA_ID]:
         self.metadata.items.append(text_pair)
         imported_text = {
             f"{lang.upper()}{text_id}": pecha_id for lang, pecha_id in text_pair.items()
@@ -272,7 +271,7 @@ class Collection:
         self.metadata.updated_at = datetime.now()
         return text_pair
 
-    def get_text_pairs(self) -> List[Dict[LANG_CODE, PECHA_ID]]:
+    def get_text_pairs(self) -> List[Dict[t.LANG_CODE, t.PECHA_ID]]:
         return self.metadata.items
 
     def save(self, output_path: Optional[Path] = None) -> Path:
@@ -291,8 +290,8 @@ class Collection:
         return self.path
 
     def create_view(
-        self, view_id: str, text_pair: Dict[LANG_CODE, PECHA_ID]
-    ) -> Dict[LANG_CODE, Path]:
+        self, view_id: str, text_pair: Dict[t.LANG_CODE, t.PECHA_ID]
+    ) -> Dict[t.LANG_CODE, Path]:
         view = View(base_path=self.views_path, id=view_id)
         text_pair_view_path = view.generate(text_pair)
         return text_pair_view_path
