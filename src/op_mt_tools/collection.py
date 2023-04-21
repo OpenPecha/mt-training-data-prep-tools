@@ -22,7 +22,7 @@ class Metadata:
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         items: List[Dict[LANG_CODE, PECHA_ID]] = [],
-        imported_texts: List[str] = [],
+        imported_texts: List[Dict[TEXT_ID, PECHA_ID]] = [],
     ):
         self.id = id
         self.title = title
@@ -251,15 +251,24 @@ class Collection:
         return self._metadata
 
     def is_text_added(self, text_id: TEXT_ID) -> bool:
-        if text_id in self.metadata.imported_texts:
-            return True
+        text_id = (
+            text_id
+            if text_id.startswith("BO") or text_id.startswith("EN")
+            else f"BO{text_id}"
+        )
+        for imported_text in self.metadata.imported_texts:
+            if text_id in imported_text:
+                return True
         return False
 
     def add_text_pair(
         self, text_pair: Dict[LANG_CODE, PECHA_ID], text_id: TEXT_ID
     ) -> Dict[LANG_CODE, PECHA_ID]:
         self.metadata.items.append(text_pair)
-        self.metadata.imported_texts.append(text_id)
+        imported_text = {
+            f"{lang.upper()}{text_id}": pecha_id for lang, pecha_id in text_pair.items()
+        }
+        self.metadata.imported_texts.append(imported_text)
         self.metadata.updated_at = datetime.now()
         return text_pair
 

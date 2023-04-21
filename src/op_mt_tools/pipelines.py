@@ -128,7 +128,7 @@ def add_text_pair_to_collection(
 
     text_pair = {}
     output_path = DATA_PATH / "pechas"
-    text_id = text_pair_ids[0]
+    text_id = text_pair_ids[0][:2]
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path, output_path=output_path)
         text_pair[lang_code] = open_pecha_id
@@ -139,7 +139,7 @@ def add_text_pair_to_collection(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
     commit_and_push(collection_path)
-    return text_id[2:], text_pair_view_path
+    return text_id, text_pair_view_path
 
 
 def get_raw_github_file_url(local_view_path: Path):
