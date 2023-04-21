@@ -33,7 +33,7 @@ def test_metadata():
         created_at=created_at,
         updated_at=updated_at,
         items=[{"bo": "P000001", "en": "P000002"}],
-        imported_texts=[{"BO0001": "P000001"}, {"EN0002": "P000002"}],
+        imported_texts=[{"BO0001": "P000001", "EN0002": "P000002"}],
     )
     assert metadata.to_dict() == {
         "id": "test",
@@ -41,7 +41,7 @@ def test_metadata():
         "created_at": created_at,
         "updated_at": updated_at,
         "items": [{"bo": "P000001", "en": "P000002"}],
-        "imported_texts": [{"BO0001": "P000001"}, {"EN0002": "P000002"}],
+        "imported_texts": [{"BO0001": "P000001", "EN0002": "P000002"}],
     }
     assert metadata.to_dict() == Metadata.from_dict(metadata.to_dict()).to_dict()
 
