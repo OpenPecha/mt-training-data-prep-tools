@@ -123,18 +123,18 @@ def add_text_pair_to_collection(
 
     text_pair = {}
     output_path = DATA_PATH / "pechas"
-    text_id = text_pair_ids[0][:2]
+    text_id_no_prefix = text_pair_ids[0][2:]
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path, output_path=output_path)
         text_pair[lang_code] = open_pecha_id
 
-    text_pair = collection.add_text_pair(text_pair, text_id)
+    text_pair = collection.add_text_pair(text_pair, text_id_no_prefix)
     collection.save()
     text_pair_view_path = collection.create_view(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
     commit_and_push(collection_path)
-    return text_id, text_pair_view_path
+    return text_id_no_prefix, text_pair_view_path
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
