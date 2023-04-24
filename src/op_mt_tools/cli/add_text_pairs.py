@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from op_mt_tools.pipelines import add_text_pair_to_collection_pipeline
@@ -16,3 +17,6 @@ if __name__ == "__main__":
     add_text_pair_to_collection_pipeline(
         collection_path=Path(args.collection_path),
     )
+
+    # for gradio_client threading
+    os._exit(0)

@@ -3,25 +3,20 @@ import subprocess
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Tuple
 
-import requests
 from git import Repo, cmd
 
-from .collection import LANG_CODE, Collection, ViewsEnum
+from . import tm
+from . import types as t
+from .collection import Collection, ViewsEnum
 from .utils import create_pecha
-
-TEXT_ID = str  # e.g. "BO0001" EN0001
-TEXT_ID_NO_PREFIX = str  # e.g. "BO0001" -> "0001"
-TEXT_PAIR = Dict[LANG_CODE, TEXT_ID]
-TEXT_PAIR_PATH = Dict[LANG_CODE, Path]
-TEXT_PAIR_VIEW_PATH = Dict[LANG_CODE, Path]
 
 DATA_PATH = Path.home() / ".monlamAI" / "data"
 DATA_PATH.mkdir(parents=True, exist_ok=True)
 
 
-def find_text_pair_ids(path: Path) -> Generator[TEXT_PAIR, None, None]:
+def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR, None, None]:
     print("[INFO] Finding completed text pairs...")
     text_ids = [int(fn.name[2:]) for fn in path.iterdir() if fn.suffix != ".md"]
     counter = Counter(text_ids)
@@ -43,7 +38,7 @@ def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
             raise ValueError(f"Repo({repo_url}) doesn't exist")
 
 
-def download_text(text_id: TEXT_ID) -> Path:
+def download_text(text_id: t.TEXT_ID) -> Path:
     """Download text from monlamAI."""
     print(f"[INFO] Downloading text {text_id}...")
     github_username = os.environ["GITHUB_USERNAME"]
@@ -56,8 +51,8 @@ def download_text(text_id: TEXT_ID) -> Path:
 
 
 def download_text_pair(
-    text_pair_ids: Generator[TEXT_PAIR, None, None],
-) -> Generator[TEXT_PAIR_PATH, None, None]:
+    text_pair_ids: Generator[t.TEXT_PAIR, None, None],
+) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Download text pair from monlamAI."""
     print("[INFO] Downloading text pairs...")
     for text_pair_id in text_pair_ids:
@@ -78,7 +73,7 @@ def download_monlamAI_textpairs_tracker_data() -> Path:
     return textpairs_tracker_path
 
 
-def get_text_pairs(path: Path) -> Generator[TEXT_PAIR_PATH, None, None]:
+def get_text_pairs(path: Path) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
     Args:
@@ -109,8 +104,8 @@ def commit_and_push(collection_path: Path) -> None:
 
 
 def add_text_pair_to_collection(
-    text_pair_path: TEXT_PAIR_PATH, collection_path: Path
-) -> Tuple[TEXT_ID_NO_PREFIX, TEXT_PAIR_VIEW_PATH]:
+    text_pair_path: t.TEXT_PAIR_PATH, collection_path: Path
+) -> Tuple[t.TEXT_ID_NO_PREFIX, t.TEXT_PAIR_VIEW_PATH]:
     """Add text pair to collection.
 
     Args:
@@ -128,55 +123,18 @@ def add_text_pair_to_collection(
 
     text_pair = {}
     output_path = DATA_PATH / "pechas"
-    text_id = text_pair_ids[0]
+    text_id_no_prefix = text_pair_ids[0][2:]
     for lang_code, path in text_pair_path.items():
         _, open_pecha_id = create_pecha(path, output_path=output_path)
         text_pair[lang_code] = open_pecha_id
 
-    text_pair = collection.add_text_pair(text_pair, text_id)
+    text_pair = collection.add_text_pair(text_pair, text_id_no_prefix)
     collection.save()
     text_pair_view_path = collection.create_view(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
     commit_and_push(collection_path)
-    return text_id[2:], text_pair_view_path
-
-
-def get_raw_github_file_url(local_view_path: Path):
-    """Get raw github file url.
-
-    Args:
-        view_file: Path to the view file. eg: parent/C1A81F448/C1A81F448.opc/views/plaintext/O192F059E/6555-en.txt
-
-    Returns:
-        Raw github file url.
-    """
-    local_view_fn = list(local_view_path.iterdir())[0]
-    repo_name = local_view_fn.parts[-6]
-    view_fn = "/".join(local_view_fn.parts[-5:])
-    return (
-        f"https://raw.githubusercontent.com/OpenPecha-Data/{repo_name}/main/{view_fn}"
-    )
-
-
-def create_monlamAI_TM(
-    text_pair_view_path: Dict[LANG_CODE, Path], text_id: str
-) -> Optional[dict]:
-    request_body = {
-        "text_id": text_id,
-    }
-    for lang_code, view_path in text_pair_view_path.items():
-        request_body[f"{lang_code}_file_url"] = get_raw_github_file_url(view_path)
-
-    r = requests.post(
-        "https://openpecha-tibetan-aligner.hf.space/run/align",
-        json={"data": [request_body]},
-    )
-    if r.status_code != requests.codes.ok:
-        print(f"[ERROR] Failed to algin {text_id}. Error code {r.status_code}")
-        return None
-    else:
-        return r.json()["data"]
+    return text_id_no_prefix, text_pair_view_path
 
 
 def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
@@ -199,4 +157,4 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
         )
         if not text_id:
             continue
-        create_monlamAI_TM(text_pair_view_path, text_id)
+        tm.create_TM(text_pair_view_path, text_id)
