@@ -1,14 +1,15 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from openpecha.core import ids as op_ids
 from openpecha.core.pecha import OpenPechaGitRepo
 from openpecha.utils import dump_yaml, load_yaml
 
+from . import config
 from . import types as t
 from .tokenizers import sent_tokenize
-from .utils import get_pkg_version
+from .utils import create_pecha, get_pkg_version
 
 
 class Metadata:
@@ -296,3 +297,36 @@ class Collection:
         view = View(base_path=self.views_path, id=view_id)
         text_pair_view_path = view.generate(text_pair)
         return text_pair_view_path
+
+
+def add_text_pair_to_collection(
+    text_pair_path: t.TEXT_PAIR_PATH, collection_path: Path
+) -> Tuple[t.TEXT_ID_NO_PREFIX, t.TEXT_PAIR_VIEW_PATH]:
+    """Add text pair to collection.
+
+    Args:
+        collection_path: Path to the collection.
+        text_pair_path: Path to the text pair.
+    """
+    text_pair_ids = [fn.name for fn in text_pair_path.values()]
+    collection = Collection(path=collection_path)
+    text_id = text_pair_ids[0]
+    if collection.is_text_added(text_id):
+        print(f"[INFO] Text pair {text_pair_ids} is already to the collection...")
+        return "", {}
+
+    print(f"[INFO] Adding text pair {text_pair_ids} to the collection...")
+
+    text_pair = {}
+    output_path = config.DATA_PATH / "pechas"
+    text_id_no_prefix = text_pair_ids[0][2:]
+    for lang_code, path in text_pair_path.items():
+        _, open_pecha_id = create_pecha(path, output_path=output_path)
+        text_pair[lang_code] = open_pecha_id
+
+    text_pair = collection.add_text_pair(text_pair, text_id_no_prefix)
+    collection.save()
+    text_pair_view_path = collection.create_view(
+        view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
+    )
+    return text_id_no_prefix, text_pair_view_path

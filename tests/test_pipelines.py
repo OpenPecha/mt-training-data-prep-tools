@@ -2,65 +2,11 @@ import os
 from pathlib import Path
 from unittest import mock
 
-import pytest
-from git.cmd import GitCommandError
-
-from op_mt_tools.collection import Collection, Metadata
 from op_mt_tools.pipelines import (
-    add_text_pair_to_collection,
-    download_monlamAI_textpairs_tracker_data,
     download_text,
+    download_textpairs_tracker_data,
     get_text_pairs,
 )
-
-
-@mock.patch("op_mt_tools.pipelines.commit_and_push")
-@mock.patch("op_mt_tools.collection.View")
-@mock.patch("op_mt_tools.pipelines.create_pecha")
-def test_add_text_pair_to_collection(
-    mock_create_pecha, mock_view, mock_commit_and_push, tmp_path
-):
-    # IGNORE: arrange boilerplate
-    collection_id = "collection"
-    metadata = Metadata(
-        id=collection_id,
-        title="collection",
-    )
-    collection = Collection(metadata=metadata)
-    collection.save(output_path=tmp_path)
-    mock_view_generate = mock.MagicMock()
-    mock_view_generate.return_value = {
-        "bo": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt",
-        "en": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt",
-    }
-    mock_view.return_value.generate = mock_view_generate
-
-    # arrange
-    collection_path = tmp_path / collection_id
-    text_pair = {
-        "bo": Path("tests") / "data" / "text_pair" / "BO0001",
-        "en": Path("tests") / "data" / "text_pair" / "EN0001",
-    }
-    mock_create_pecha.return_value = ("I001", "O001")
-
-    # act
-    text_id, text_pair_view_path = add_text_pair_to_collection(
-        text_pair, collection_path
-    )
-
-    # assert
-    collection = Collection(collection_path)
-    assert {"bo": "O001", "en": "O001"} in collection.metadata.items
-    assert {"BO0001": "O001", "EN0001": "O001"} in collection.metadata.imported_texts
-    assert text_id == "0001"
-    assert (
-        text_pair_view_path["bo"]
-        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt"
-    )
-    assert (
-        text_pair_view_path["en"]
-        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt"
-    )
 
 
 def create_monlamAI_tracker_data(path, n):
@@ -88,8 +34,8 @@ def test_get_text_pairs(mock_download_text, tmp_path):
     assert mock.call("EN0002") in mock_download_text.call_args_list
 
 
-@mock.patch("op_mt_tools.pipelines.Repo")
-def test_download_text(mock_repo_class):
+@mock.patch("op_mt_tools.pipelines.clone_or_pull_repo")
+def test_download_text(mock_clone_or_pull_repo):
     # arrange
     os.environ["GITHUB_USERNAME"] = "test"
     os.environ["GITHUB_TOKEN"] = "test"
@@ -103,19 +49,9 @@ def test_download_text(mock_repo_class):
     assert text_path.name == text_id
 
 
-@mock.patch("op_mt_tools.pipelines.Repo")
-def test_download_text_text_not_found(mock_repo_class):
-    text_id = "BO0001"
-    mock_repo_class.clone_from.side_effect = GitCommandError("git", "clone")
-
-    # act and assert
-    pytest.raises(ValueError, download_text, text_id)
-
-
-@mock.patch("op_mt_tools.pipelines.Repo")
-def test_download_monlamAI_tracker_data(mock_repo_class):
-    mock_repo_class.clone_from.return_value = None
-    textpairs_tracker_path = download_monlamAI_textpairs_tracker_data()
+@mock.patch("op_mt_tools.pipelines.clone_or_pull_repo")
+def test_download_monlamAI_tracker_data(mock_clone_or_pull_repo):
+    textpairs_tracker_path = download_textpairs_tracker_data()
 
     assert (
         textpairs_tracker_path

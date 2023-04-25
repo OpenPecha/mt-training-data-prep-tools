@@ -13,6 +13,7 @@ from op_mt_tools.collection import (
     View,
     ViewMetadata,
     ViewsEnum,
+    add_text_pair_to_collection,
     get_serializer_path,
     text_pair_plaintext_serializer,
 )
@@ -249,3 +250,49 @@ def test_collection_is_text_added():
     assert collection.is_text_added("BO0001")
     assert collection.is_text_added("EN0001")
     assert collection.is_text_added("0001")
+
+
+@mock.patch("op_mt_tools.collection.View")
+@mock.patch("op_mt_tools.collection.create_pecha")
+def test_add_text_pair_to_collection(mock_create_pecha, mock_view, tmp_path):
+    # IGNORE: arrange boilerplate
+    collection_id = "collection"
+    metadata = Metadata(
+        id=collection_id,
+        title="collection",
+    )
+    collection = Collection(metadata=metadata)
+    collection.save(output_path=tmp_path)
+    mock_view_generate = mock.MagicMock()
+    mock_view_generate.return_value = {
+        "bo": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt",
+        "en": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt",
+    }
+    mock_view.return_value.generate = mock_view_generate
+
+    # arrange
+    collection_path = tmp_path / collection_id
+    text_pair = {
+        "bo": Path("tests") / "data" / "text_pair" / "BO0001",
+        "en": Path("tests") / "data" / "text_pair" / "EN0001",
+    }
+    mock_create_pecha.return_value = ("I001", "O001")
+
+    # act
+    text_id, text_pair_view_path = add_text_pair_to_collection(
+        text_pair, collection_path
+    )
+
+    # assert
+    collection = Collection(collection_path)
+    assert {"bo": "O001", "en": "O001"} in collection.metadata.items
+    assert {"BO0001": "O001", "EN0001": "O001"} in collection.metadata.imported_texts
+    assert text_id == "0001"
+    assert (
+        text_pair_view_path["bo"]
+        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt"
+    )
+    assert (
+        text_pair_view_path["en"]
+        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt"
+    )

@@ -1,6 +1,9 @@
+import os
+import subprocess
 from pathlib import Path
 from typing import Tuple
 
+from git import Repo, cmd
 from openpecha.core import metadata
 from openpecha.core.pecha import OpenPechaGitRepo
 
@@ -54,3 +57,31 @@ def get_pkg_version():
     import pkg_resources
 
     return pkg_resources.get_distribution("op-mt-tools").version
+
+
+def commit_and_push(collection_path: Path) -> None:
+    """Commit and push collection."""
+    # configure git users
+    subprocess.run(
+        f"git config --global user.name {os.environ['GITHUB_USERNAME']}".split()
+    )
+    subprocess.run(
+        f"git config --global user.email {os.environ['GITHUB_EMAIL']}".split()
+    )
+    repo = Repo(collection_path)
+    repo.git.add(".", "--all")
+    repo.git.commit("-m", "Add text pair")
+    repo.remotes.origin.push()
+
+
+def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
+    """Clone or pull repo."""
+    if local_repo_path.is_dir():
+        repo = Repo(local_repo_path)
+        repo.remotes.origin.pull()
+    else:
+        try:
+            Repo.clone_from(repo_url, str(local_repo_path))
+        except cmd.GitCommandError as e:
+            print(e)
+            raise ValueError(f"Repo({repo_url}) doesn't exist")
