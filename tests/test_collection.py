@@ -138,9 +138,12 @@ def test_text_pair_plaintext_serializer(mock_download_pecha, tmp_path):
     result = text_pair_plaintext_serializer(text_pair, output_path)
 
     # assert
-    assert result == {"bo": output_path / pecha_id, "en": output_path / pecha_id}
-    assert (output_path / pecha_id / f"{base_name}-bo.txt").exists()
-    assert (output_path / pecha_id / f"{base_name}-en.txt").exists()
+    assert result == {
+        "bo": output_path / f"{pecha_id}-bo.txt",
+        "en": output_path / f"{pecha_id}-en.txt",
+    }
+    assert (output_path / f"{pecha_id}-bo.txt").exists()
+    assert (output_path / f"{pecha_id}-en.txt").exists()
 
 
 @mock.patch("op_mt_tools.collection.text_pair_plaintext_serializer")

@@ -1,4 +1,3 @@
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -8,6 +7,7 @@ from openpecha.core.pecha import OpenPechaGitRepo
 from openpecha.utils import dump_yaml, load_yaml
 
 from . import types as t
+from .tokenizers import sent_tokenize
 from .utils import get_pkg_version
 
 
@@ -113,13 +113,14 @@ def text_pair_plaintext_serializer(
     for lang_code, pecha_id in text_pair.items():
         pecha = OpenPechaGitRepo(pecha_id)
         pecha._opf_path = pecha._opf_path / f"{pecha_id}.opf"  # TODO: remove this hack
-        pecha_view_path = output_path / pecha_id
-        pecha_view_path.mkdir(parents=True, exist_ok=True)
-        for base_name in pecha.base_names_list:
-            source_path = pecha.base_path / f"{base_name}.txt"
-            target_path = pecha_view_path / f"{base_name}-{lang_code}.txt"
-            shutil.copy(source_path, target_path)
-        text_pair_view_path[lang_code] = pecha_view_path
+        pecha_view_fn = output_path / f"{pecha_id}-{lang_code}.txt"
+        pecha_text = ""
+        with pecha_view_fn.open("+a") as f:
+            for base_name in pecha.base_names_list:
+                pecha_text += pecha.get_base(base_name)
+                sent_seg_text = sent_tokenize(text=pecha_text, lang=lang_code)
+                f.write(sent_seg_text + "\n")
+        text_pair_view_path[lang_code] = pecha_view_fn
     return text_pair_view_path
 
 
