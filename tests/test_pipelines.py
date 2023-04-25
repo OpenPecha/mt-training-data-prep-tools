@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest import mock
 
 from op_mt_tools.pipelines import (
+    add_text_pair_to_collection_pipeline,
     download_text,
     download_textpairs_tracker_data,
     get_text_pairs,
@@ -62,3 +63,35 @@ def test_download_monlamAI_tracker_data(mock_clone_or_pull_repo):
         / "mt"
         / "mt-extracted-text-pairs"
     )
+
+
+@mock.patch("op_mt_tools.pipelines.download_textpairs_tracker_data")
+@mock.patch("op_mt_tools.pipelines.get_text_pairs")
+@mock.patch("op_mt_tools.pipelines.add_text_pair_to_collection")
+@mock.patch("op_mt_tools.pipelines.commit_and_push")
+@mock.patch("op_mt_tools.pipelines.create_TM")
+def test_add_text_pair_to_collection_pipeline(
+    create_TM,
+    commit_and_push,
+    add_text_pair_to_collection,
+    get_text_pairs,
+    download_textpairs_tracker_data,
+):
+    download_textpairs_tracker_data.return_value = Path("tests/data/text_pair")
+    get_text_pairs.return_value = [
+        {
+            "bo": Path("tests/data/text_pair/BO0001"),
+            "en": Path("tests/data/text_pair/EN0001"),
+        }
+    ]
+    add_text_pair_to_collection.return_value = (
+        "0001",
+        {
+            "bo": "C0001/C0001.opc/views/plaintext/O0001-bo.txt",
+            "en": "C0001/C0001.opc/views/plaintext/O0002-en.txt",
+        },
+    )
+    collection_path = Path("tests/data/collection")
+
+    # act
+    add_text_pair_to_collection_pipeline(collection_path)
