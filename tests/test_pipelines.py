@@ -29,14 +29,17 @@ def test_add_text_pair_to_collection(
     collection = Collection(metadata=metadata)
     collection.save(output_path=tmp_path)
     mock_view_generate = mock.MagicMock()
-    mock_view_generate.return_value = tmp_path / "views" / "plaintext"
+    mock_view_generate.return_value = {
+        "bo": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt",
+        "en": Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt",
+    }
     mock_view.return_value.generate = mock_view_generate
 
     # arrange
     collection_path = tmp_path / collection_id
     text_pair = {
-        "bo": Path("tests") / "data" / "text_pair" / "bo" / "P000001",
-        "en": Path("tests") / "data" / "text_pair" / "en" / "P000002",
+        "bo": Path("tests") / "data" / "text_pair" / "BO0001",
+        "en": Path("tests") / "data" / "text_pair" / "EN0001",
     }
     mock_create_pecha.return_value = ("I001", "O001")
 
@@ -48,6 +51,16 @@ def test_add_text_pair_to_collection(
     # assert
     collection = Collection(collection_path)
     assert {"bo": "O001", "en": "O001"} in collection.metadata.items
+    assert {"BO0001": "O001", "EN0001": "O001"} in collection.metadata.imported_texts
+    assert text_id == "0001"
+    assert (
+        text_pair_view_path["bo"]
+        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-bo.txt"
+    )
+    assert (
+        text_pair_view_path["en"]
+        == Path("C0001") / "C0001.opc" / "views" / "plaintext" / "P0001-en.txt"
+    )
 
 
 def create_monlamAI_tracker_data(path, n):
