@@ -34,7 +34,7 @@ def run_aligner(input_json_fn: Path):
     return "PROCESSING"
 
 
-def get_raw_github_file_url(local_view_path: Path):
+def get_raw_github_file_url(local_view_fn: Path):
     """Get raw github file url.
 
     Args:
@@ -43,9 +43,9 @@ def get_raw_github_file_url(local_view_path: Path):
     Returns:
         Raw github file url.
     """
-    local_view_fn = list(local_view_path.iterdir())[0]
-    repo_name = local_view_fn.parts[-6]
-    view_fn = "/".join(local_view_fn.parts[-5:])
+    local_view_fn = Path(local_view_fn)
+    repo_name = local_view_fn.parts[-5]
+    view_fn = "/".join(local_view_fn.parts[-4:])
     return (
         f"https://raw.githubusercontent.com/OpenPecha-Data/{repo_name}/main/{view_fn}"
     )
