@@ -41,7 +41,9 @@ def test_add_text_pair_to_collection(
     mock_create_pecha.return_value = ("I001", "O001")
 
     # act
-    add_text_pair_to_collection(text_pair, collection_path)
+    text_id, text_pair_view_path = add_text_pair_to_collection(
+        text_pair, collection_path
+    )
 
     # assert
     collection = Collection(collection_path)
