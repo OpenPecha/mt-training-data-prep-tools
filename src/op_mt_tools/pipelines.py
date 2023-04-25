@@ -4,9 +4,10 @@ from collections import Counter
 from collections.abc import Generator
 from pathlib import Path
 
-from . import config, tm
+from . import config
 from . import types as t
 from .collection import add_text_pair_to_collection
+from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
 
 
@@ -92,4 +93,4 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
             continue
         commit_and_push(collection_path)
         time.sleep(3)
-        tm.create_TM(text_pair_view_path, text_id)
+        create_TM(text_pair_view_path, text_id)

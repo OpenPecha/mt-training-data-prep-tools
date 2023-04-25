@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 from git.exc import GitCommandError
 
-from op_mt_tools.utils import clone_or_pull_repo, create_pecha
+from op_mt_tools.utils import clone_or_pull_repo, commit_and_push, create_pecha
 
 
 def test_create_pecha():
@@ -34,3 +34,14 @@ def test_clone_repo_not_found(mock_repo_class):
 
     # act and assert
     pytest.raises(ValueError, clone_or_pull_repo, repo_url, local_repo_path)
+
+
+@mock.patch("op_mt_tools.utils.Repo")
+def test_pull_repo(mock_repo_class, tmp_path):
+    repo_url = "https://github.com/test/test.git"
+    clone_or_pull_repo(repo_url, tmp_path)
+
+
+@mock.patch("op_mt_tools.utils.Repo")
+def test_commit_and_push(mock_repo_class):
+    commit_and_push(Path("tests/data/text_pair/BO0001"))

@@ -59,8 +59,8 @@ def get_pkg_version():
     return pkg_resources.get_distribution("op-mt-tools").version
 
 
-def commit_and_push(collection_path: Path) -> None:
-    """Commit and push collection."""
+def commit_and_push(path: Path) -> None:
+    """Commit and push local repo."""
     # configure git users
     subprocess.run(
         f"git config --global user.name {os.environ['GITHUB_USERNAME']}".split()
@@ -68,7 +68,7 @@ def commit_and_push(collection_path: Path) -> None:
     subprocess.run(
         f"git config --global user.email {os.environ['GITHUB_EMAIL']}".split()
     )
-    repo = Repo(collection_path)
+    repo = Repo(path)
     repo.git.add(".", "--all")
     repo.git.commit("-m", "Add text pair")
     repo.remotes.origin.push()
