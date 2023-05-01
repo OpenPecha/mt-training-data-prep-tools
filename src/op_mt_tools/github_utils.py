@@ -35,7 +35,7 @@ def download_text_files_from_github_repo(
         response = requests.get(raw_url, headers=headers)
         response.raise_for_status()
 
-        output_fn = output_path / f"{Path(text_file['name']).stem[:200]}.txt"
+        output_fn = output_path / f"{Path(text_file['name']).stem[:50]}.txt"
         output_fn.write_text(response.text)
 
     return output_path
