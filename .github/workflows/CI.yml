@@ -26,6 +26,7 @@ jobs:
           pip install -U pip
           pip install .
           pip install .[dev]
+          python -m spacy download en_core_web_sm
 
       - name: Test with pytest
         run: PYTHONPATH=src pytest
