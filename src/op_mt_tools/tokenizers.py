@@ -2,6 +2,7 @@ import botok
 import spacy
 
 nlp = spacy.load("en_core_web_sm")
+nlp.max_length = 2000000
 bo_work_tokenizer = botok.WordTokenizer()
 
 SENT_PER_LINE_STR = str  # sentence per line string
