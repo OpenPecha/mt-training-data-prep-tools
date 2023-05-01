@@ -7,6 +7,7 @@ from pathlib import Path
 from . import config
 from . import types as t
 from .collection import add_text_pair_to_collection
+from .github_utils import download_text_files_from_github_repo
 from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
 
@@ -23,12 +24,15 @@ def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR, None, None]:
 def download_text(text_id: t.TEXT_ID) -> Path:
     """Download text from monlamAI."""
     print(f"[INFO] Downloading text {text_id}...")
-    github_username = os.environ["GITHUB_USERNAME"]
     github_token = os.environ["GITHUB_TOKEN"]
     github_org = os.environ["MAI_GITHUB_ORG"]
-    text_repo_url = f"https://{github_username}:{github_token}@github.com/{github_org}/{text_id}.git"
     local_text_repo_path = config.DATA_PATH / "texts" / text_id
-    clone_or_pull_repo(text_repo_url, local_text_repo_path)
+    download_text_files_from_github_repo(
+        repo_owner=github_org,
+        repo_name=text_id,
+        token=github_token,
+        output_path=local_text_repo_path,
+    )
     return local_text_repo_path
 
 
