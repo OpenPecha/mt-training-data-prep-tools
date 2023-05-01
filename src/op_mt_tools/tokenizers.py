@@ -1,7 +1,7 @@
 import botok
-import nltk
+import spacy
 
-nltk.download("punkt")
+nlp = spacy.load("en_core_web_sm")
 bo_work_tokenizer = botok.WordTokenizer()
 
 SENT_PER_LINE_STR = str  # sentence per line string
@@ -12,10 +12,23 @@ def join_sentences(sentences):
     return "\n".join(sentences)
 
 
+def en_preprocess(text: str) -> str:
+    text = text.replace("\r", "").replace("\n", "")
+    return text
+
+
 def en_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
-    sents = nltk.sent_tokenize(text)
+
+    text = en_preprocess(text)
+    doc = nlp(text)
+    sents = [str(s) for s in doc.sents]
     return join_sentences(sents)
+
+
+def bo_preprocess(text: str) -> str:
+    text = text.replace("\r", "").replace("\n", "")
+    return text
 
 
 def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
@@ -24,6 +37,7 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     def _to_string(tokens):
         return "".join(t["text"] for t in tokens)
 
+    text = bo_preprocess(text)
     tokens = bo_work_tokenizer.tokenize(text)
     sents = [_to_string(sent["tokens"]) for sent in botok.sentence_tokenizer(tokens)]
     return join_sentences(sents)
