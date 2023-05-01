@@ -7,6 +7,7 @@ from op_mt_tools.pipelines import (
     download_text,
     download_textpairs_tracker_data,
     get_text_pairs,
+    is_text_exists,
 )
 
 
@@ -95,3 +96,21 @@ def test_add_text_pair_to_collection_pipeline(
 
     # act
     add_text_pair_to_collection_pipeline(collection_path)
+
+
+def test_is_text_exists(tmp_path):
+    # arrange
+    text_path = tmp_path / "text"
+    text_path.mkdir(parents=True, exist_ok=True)
+    (text_path / "text.txt").touch()
+
+    existed_text_pair_path = {
+        "bo": text_path,
+        "en": text_path,
+    }
+
+    unexisted_text_pair_path = {"bo": tmp_path, "en": tmp_path}
+
+    # assert
+    assert is_text_exists(existed_text_pair_path)
+    assert not is_text_exists(unexisted_text_pair_path)

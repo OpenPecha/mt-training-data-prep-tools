@@ -56,6 +56,14 @@ def download_textpairs_tracker_data() -> Path:
     return textpairs_tracker_path
 
 
+def is_text_exists(text_pair_path: t.TEXT_PAIR_PATH) -> bool:
+    """Check if .txt files are found in `text_pair_path`."""
+    for text_path in text_pair_path.values():
+        if not any(text_path.glob("*.txt")):
+            return False
+    return True
+
+
 def get_text_pairs(path: Path) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
@@ -86,6 +94,8 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
     text_pairs_tracker_path = download_textpairs_tracker_data()
     text_pair_paths = get_text_pairs(text_pairs_tracker_path)
     for text_pair_path in text_pair_paths:
+        if not is_text_exists(text_pair_path):
+            continue
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
         )
