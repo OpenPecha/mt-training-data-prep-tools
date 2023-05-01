@@ -27,6 +27,7 @@ def download_text(text_id: t.TEXT_ID) -> Path:
     github_token = os.environ["GITHUB_TOKEN"]
     github_org = os.environ["MAI_GITHUB_ORG"]
     local_text_repo_path = config.DATA_PATH / "texts" / text_id
+    local_text_repo_path.mkdir(parents=True, exist_ok=True)
     download_text_files_from_github_repo(
         repo_owner=github_org,
         repo_name=text_id,
