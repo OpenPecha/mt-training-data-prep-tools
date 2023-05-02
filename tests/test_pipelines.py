@@ -36,8 +36,8 @@ def test_get_text_pairs(mock_download_text, tmp_path):
     assert mock.call("EN0002") in mock_download_text.call_args_list
 
 
-@mock.patch("op_mt_tools.pipelines.clone_or_pull_repo")
-def test_download_text(mock_clone_or_pull_repo):
+@mock.patch("op_mt_tools.pipelines.download_text_files_from_github_repo")
+def test_download_text(mock_download):
     # arrange
     os.environ["GITHUB_USERNAME"] = "test"
     os.environ["GITHUB_TOKEN"] = "test"

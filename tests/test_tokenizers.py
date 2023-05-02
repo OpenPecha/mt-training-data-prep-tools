@@ -27,8 +27,9 @@ def test_bo_preprocess():
 def test_bo_sent_tokenizer():
     text = (
         "༄༅། །རྗེ་བཙུན་མི\n་ལ་རས་པའི་རྣམ་ཐར་\r\nརྒྱས་པར་ཕྱེ་བ་མགུར་འབུམ་ཞེས་བྱ་བ་བཞུགས་སོ། །\n"
-        "༄༅༅། །ན་མོ་གུ་རུ། རྣལ་འབྱོར་གྱི་དབང་ཕྱུག་རྗེ་བཙུན་མི་ལ་རས་པ་དེ་ཉིད། མཆོང་ལུང་ཁྱུང་གི་རྫོ"
+        "༄༅༅། །ན་མོ་གུ་རུ། རྣལ་འབྱོར་གྱི་དབང་\tཕྱུག་རྗེ་བཙུན་མི་ལ་རས་པ་དེ་ཉིད།"
     )
     sents = bo_sent_tokenizer(text)
 
-    assert len(sents.splitlines()) == 2
+    print(sents)
+    assert len(sents.splitlines()) == 5

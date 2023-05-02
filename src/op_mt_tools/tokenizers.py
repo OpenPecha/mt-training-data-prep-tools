@@ -1,9 +1,9 @@
-import botok
+import re
+
 import spacy
 
 nlp = spacy.load("en_core_web_sm")
 nlp.max_length = 2000000
-bo_work_tokenizer = botok.WordTokenizer()
 
 SENT_PER_LINE_STR = str  # sentence per line string
 
@@ -35,13 +35,35 @@ def bo_preprocess(text: str) -> str:
 def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
 
-    def _to_string(tokens):
-        return "".join(t["text"] for t in tokens)
+    r_subs = [
+        (r"\s{2,}", ""),
+        ("^ ", ""),
+        (r"\n+", r"\n"),
+        ("༌", "་"),
+        ("་ ", "་"),
+        ("་ ", "་"),
+        (r"^་+", ""),
+        (r"^་+", ""),
+        (r"༌{2,}", "་"),
+        (r"་{2,}", "༌"),
+        ("།", "།"),
+        ("། ། ། །", "།། །།"),
+        ("། ། ", "། །"),
+        (r"([ག།ཤ] །?)([^\n།])", r"\g<1>\n\g<2>"),
+        ("། ", "།"),
+    ]
 
     text = bo_preprocess(text)
-    tokens = bo_work_tokenizer.tokenize(text)
-    sents = [_to_string(sent["tokens"]) for sent in botok.sentence_tokenizer(tokens)]
-    return join_sentences(sents)
+    text = re.sub(r"\t", "", text)
+
+    # split on space
+    r_split = r"(?<!།\s)\s+(?!\s*།)"
+    text = "\n".join([sent for sent in re.split(r_split, text) if sent])
+
+    for f, to in r_subs:
+        text = re.sub(f, to, text)
+
+    return text
 
 
 def sent_tokenize(text, lang) -> SENT_PER_LINE_STR:
