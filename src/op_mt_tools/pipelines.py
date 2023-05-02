@@ -48,7 +48,7 @@ def download_text_pair(
     for text_pair_id in text_pair_ids:
         text_pair_path = {}
         for lang_code, text_id in text_pair_id.items():
-            if skip_text_callback and skip_text_callback(tex_id=text_id):
+            if skip_text_callback and skip_text_callback(text_id=text_id):
                 continue
             text_pair_path[lang_code] = download_text(text_id)
         yield text_pair_path
