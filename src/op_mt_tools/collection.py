@@ -330,3 +330,12 @@ def add_text_pair_to_collection(
         view_id=ViewsEnum.PLAINTEXT, text_pair=text_pair
     )
     return text_id_no_prefix, text_pair_view_path
+
+
+def skip_text(collection_path: Path, text_id: str) -> bool:
+    """Check if text is already in the collection."""
+    collection = Collection(path=collection_path)
+    if collection.is_text_added(text_id):
+        print(f"[INFO] Text pair {text_id} is already to the collection...")
+        return True
+    return False

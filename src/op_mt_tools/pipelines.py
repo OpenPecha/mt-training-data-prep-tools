@@ -2,11 +2,13 @@ import os
 import time
 from collections import Counter
 from collections.abc import Generator
+from functools import partial
 from pathlib import Path
+from typing import Callable, Optional
 
 from . import config
 from . import types as t
-from .collection import add_text_pair_to_collection
+from .collection import add_text_pair_to_collection, skip_text
 from .github_utils import download_text_files_from_github_repo
 from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
@@ -39,12 +41,15 @@ def download_text(text_id: t.TEXT_ID) -> Path:
 
 def download_text_pair(
     text_pair_ids: Generator[t.TEXT_PAIR, None, None],
+    skip_text_callback: Optional[Callable] = None,
 ) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Download text pair from monlamAI."""
     print("[INFO] Downloading text pairs...")
     for text_pair_id in text_pair_ids:
         text_pair_path = {}
         for lang_code, text_id in text_pair_id.items():
+            if skip_text_callback and skip_text_callback(tex_id=text_id):
+                continue
             text_pair_path[lang_code] = download_text(text_id)
         yield text_pair_path
 
@@ -69,7 +74,9 @@ def is_text_exists(text_pair_path: t.TEXT_PAIR_PATH) -> bool:
     return True
 
 
-def get_text_pairs(path: Path) -> Generator[t.TEXT_PAIR_PATH, None, None]:
+def get_text_pairs(
+    path: Path, skip_text_callback: Optional[Callable] = None
+) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
     Args:
@@ -80,7 +87,7 @@ def get_text_pairs(path: Path) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """
     print("[INFO] Getting text pairs...")
     text_pair_ids = find_text_pair_ids(path)
-    text_pair_paths = download_text_pair(text_pair_ids)
+    text_pair_paths = download_text_pair(text_pair_ids, skip_text_callback)
     return text_pair_paths
 
 
@@ -97,7 +104,8 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
         raise ValueError(f"Collection doesn't exist at {collection_path.resolve()}")
 
     text_pairs_tracker_path = download_textpairs_tracker_data()
-    text_pair_paths = get_text_pairs(text_pairs_tracker_path)
+    skip_text_callback = partial(skip_text, collection_path=collection_path)
+    text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
     for text_pair_path in text_pair_paths:
         if not is_text_exists(text_pair_path):
             continue
