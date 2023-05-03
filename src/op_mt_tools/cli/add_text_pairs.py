@@ -13,7 +13,7 @@ if __name__ == "__main__":
         help="Path to the collection.",
     )
     parser.add_argument(
-        "--create_TM",
+        "--skip_create_TM",
         action="store_true",
         help="whether to create TM",
     )
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     add_text_pair_to_collection_pipeline(
         collection_path=Path(args.collection_path),
-        should_create_TM=args.create_TM,
+        should_create_TM=False if args.skip_create_TM else True,
         run_for_first_n_texts=args.n_texts,
     )
 
