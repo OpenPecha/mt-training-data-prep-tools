@@ -4,12 +4,12 @@ from collections import Counter
 from collections.abc import Generator
 from functools import partial
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 from . import config
 from . import types as t
 from .collection import add_text_pair_to_collection, skip_text
-from .github_utils import download_text_files_from_github_repo
+from .github_utils import download_frist_text_file_from_github_repo
 from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
 
@@ -23,20 +23,29 @@ def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR, None, None]:
         yield {"bo": f"BO{id_:04d}", "en": f"EN{id_:04d}"}
 
 
-def download_text(text_id: t.TEXT_ID) -> Path:
-    """Download text from monlamAI."""
+def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
+    """Download text from monlamAI.
+
+    Args:
+        text_id: The text id.
+
+    Returns:
+        text_file_exists: Whether the text file exists.
+        local_text_repo_path: The local path to the text repository.
+    """
     print(f"[INFO] Downloading text {text_id}...")
     github_token = os.environ["GITHUB_TOKEN"]
     github_org = os.environ["MAI_GITHUB_ORG"]
     local_text_repo_path = config.DATA_PATH / "texts" / text_id
     local_text_repo_path.mkdir(parents=True, exist_ok=True)
-    download_text_files_from_github_repo(
+    text_file_fn = download_frist_text_file_from_github_repo(
         repo_owner=github_org,
         repo_name=text_id,
         token=github_token,
         output_path=local_text_repo_path,
     )
-    return local_text_repo_path
+    text_file_exists = text_file_fn is not None
+    return text_file_exists, local_text_repo_path
 
 
 def download_text_pair(
@@ -50,8 +59,14 @@ def download_text_pair(
         for lang_code, text_id in text_pair_id.items():
             if skip_text_callback and skip_text_callback(text_id=text_id):
                 continue
-            text_pair_path[lang_code] = download_text(text_id)
-        yield text_pair_path
+            text_file_exists, text_path = download_text(text_id)
+            if not text_file_exists:
+                break
+            text_pair_path[lang_code] = text_path
+
+        # only return text pair path if both texts exist
+        if len(text_pair_path) == 2:
+            yield text_pair_path
 
 
 def download_textpairs_tracker_data() -> Path:
@@ -64,14 +79,6 @@ def download_textpairs_tracker_data() -> Path:
     clone_or_pull_repo(tracker_repo_url, local_tracker_repo_path)
     textpairs_tracker_path = local_tracker_repo_path / "mt" / "mt-extracted-text-pairs"
     return textpairs_tracker_path
-
-
-def is_text_exists(text_pair_path: t.TEXT_PAIR_PATH) -> bool:
-    """Check if .txt files are found in `text_pair_path`."""
-    for text_path in text_pair_path.values():
-        if not any(text_path.glob("*.txt")):
-            return False
-    return True
 
 
 def get_text_pairs(
@@ -91,7 +98,11 @@ def get_text_pairs(
     return text_pair_paths
 
 
-def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
+def add_text_pair_to_collection_pipeline(
+    collection_path: Path,
+    should_create_TM=True,
+    run_for_first_n_texts: float = float("inf"),
+) -> None:
     """Create collection from monlamAI text pair tracker.
 
     Args:
@@ -106,9 +117,10 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
     text_pairs_tracker_path = download_textpairs_tracker_data()
     skip_text_callback = partial(skip_text, collection_path=collection_path)
     text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
+    n_texts = 0
     for text_pair_path in text_pair_paths:
-        if not is_text_exists(text_pair_path):
-            continue
+        if n_texts >= run_for_first_n_texts:
+            break
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
         )
@@ -116,4 +128,6 @@ def add_text_pair_to_collection_pipeline(collection_path: Path) -> None:
             continue
         commit_and_push(collection_path)
         time.sleep(3)
-        create_TM(text_pair_view_path, text_id)
+        if should_create_TM:
+            create_TM(text_pair_view_path, text_id)
+        n_texts += 1
