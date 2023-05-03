@@ -7,7 +7,6 @@ from op_mt_tools.pipelines import (
     download_text,
     download_textpairs_tracker_data,
     get_text_pairs,
-    is_text_exists,
 )
 
 
@@ -26,7 +25,7 @@ def create_monlamAI_tracker_data(path, n):
 def test_get_text_pairs(mock_download_text, tmp_path):
     path = create_monlamAI_tracker_data(tmp_path, 4)  # creates only BO0002 and EN0002
     text_download_path = tmp_path / "texts"
-    mock_download_text.return_value = text_download_path
+    mock_download_text.return_value = True, text_download_path
 
     text_pair_paths = list(get_text_pairs(path))
 
@@ -36,18 +35,20 @@ def test_get_text_pairs(mock_download_text, tmp_path):
     assert mock.call("EN0002") in mock_download_text.call_args_list
 
 
-@mock.patch("op_mt_tools.pipelines.download_text_files_from_github_repo")
-def test_download_text(mock_download):
+@mock.patch("op_mt_tools.pipelines.download_first_text_file_from_github_repo")
+def test_download_text(mock_download_text_file):
     # arrange
     os.environ["GITHUB_USERNAME"] = "test"
     os.environ["GITHUB_TOKEN"] = "test"
     os.environ["MAI_GITHUB_ORG"] = "test"
     text_id = "BO0001"
+    mock_download_text_file.return_value = Path(text_id)
 
     # act
-    text_path = download_text(text_id)
+    is_text_exists, text_path = download_text(text_id)
 
     # assert
+    assert is_text_exists
     assert text_path.name == text_id
 
 
@@ -96,21 +97,3 @@ def test_add_text_pair_to_collection_pipeline(
 
     # act
     add_text_pair_to_collection_pipeline(collection_path)
-
-
-def test_is_text_exists(tmp_path):
-    # arrange
-    text_path = tmp_path / "text"
-    text_path.mkdir(parents=True, exist_ok=True)
-    (text_path / "text.txt").touch()
-
-    existed_text_pair_path = {
-        "bo": text_path,
-        "en": text_path,
-    }
-
-    unexisted_text_pair_path = {"bo": tmp_path, "en": tmp_path}
-
-    # assert
-    assert is_text_exists(existed_text_pair_path)
-    assert not is_text_exists(unexisted_text_pair_path)

@@ -5,7 +5,7 @@ from typing import Optional
 import requests
 
 
-def download_frist_text_file_from_github_repo(
+def download_first_text_file_from_github_repo(
     repo_owner: str,
     repo_name: str,
     token: str,
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         repo_owner = "MonlamAI"
         repo_name = "BO0722"
         token = os.environ["GITHUB_TOKEN"]
-        downloaded_files = download_frist_text_file_from_github_repo(
+        downloaded_files = download_first_text_file_from_github_repo(
             repo_owner, repo_name, token, output_path
         )
         print(downloaded_files)

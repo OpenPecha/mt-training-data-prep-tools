@@ -9,7 +9,7 @@ from typing import Callable, Optional, Tuple
 from . import config
 from . import types as t
 from .collection import add_text_pair_to_collection, skip_text
-from .github_utils import download_frist_text_file_from_github_repo
+from .github_utils import download_first_text_file_from_github_repo
 from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
 
@@ -38,7 +38,7 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
     github_org = os.environ["MAI_GITHUB_ORG"]
     local_text_repo_path = config.DATA_PATH / "texts" / text_id
     local_text_repo_path.mkdir(parents=True, exist_ok=True)
-    text_file_fn = download_frist_text_file_from_github_repo(
+    text_file_fn = download_first_text_file_from_github_repo(
         repo_owner=github_org,
         repo_name=text_id,
         token=github_token,
