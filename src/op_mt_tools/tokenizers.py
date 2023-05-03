@@ -1,7 +1,7 @@
-import re
-
+import botok
 import spacy
 
+bo_word_tokenizer = botok.WordTokenizer()
 nlp = spacy.load("en_core_web_sm")
 nlp.max_length = 2000000
 
@@ -35,35 +35,31 @@ def bo_preprocess(text: str) -> str:
 def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
 
-    r_subs = [
-        (r"\s{2,}", ""),
-        ("^ ", ""),
-        (r"\n+", r"\n"),
-        ("༌", "་"),
-        ("་ ", "་"),
-        ("་ ", "་"),
-        (r"^་+", ""),
-        (r"^་+", ""),
-        (r"༌{2,}", "་"),
-        (r"་{2,}", "༌"),
-        ("།", "།"),
-        ("། ། ། །", "།། །།"),
-        ("། ། ", "། །"),
-        (r"([ག།ཤ] །?)([^\n།])", r"\g<1>\n\g<2>"),
-        ("། ", "།"),
-    ]
+    def get_token_text(token):
+        if hasattr(token, "text_cleaned") and token.text_cleaned:
+            return token.text_cleaned
+        else:
+            return token.text
+
+    # fmt: off
+    opening_puncts = ['༁', '༂', '༃', '༄', '༅', '༆', '༇', '༈', '༉', '༊', '༑', '༒', '༺', '༼', '༿', '࿐', '࿑', '࿓', '࿔', '࿙']  # noqa: E501
+    closing_puncts = ['།', '༎', '༏', '༐', '༔', '༴', '༻', '༽', '༾', '࿚']  # noqa: E501
+    # fmt: on
 
     text = bo_preprocess(text)
-    text = re.sub(r"\t", "", text)
+    sents_text = ""
+    text = bo_preprocess(text)
+    tokens = bo_word_tokenizer.tokenize(text)
+    for token in tokens:
+        token_text = get_token_text(token)
+        if any(punct in token_text for punct in opening_puncts):
+            sents_text += token_text
+        elif any(punct in token_text for punct in closing_puncts):
+            sents_text += token_text + "\n"
+        else:
+            sents_text += token_text
 
-    # split on space
-    r_split = r"(?<!།\s)\s+(?!\s*།)"
-    text = "\n".join([sent for sent in re.split(r_split, text) if sent])
-
-    for f, to in r_subs:
-        text = re.sub(f, to, text)
-
-    return text
+    return sents_text
 
 
 def sent_tokenize(text, lang) -> SENT_PER_LINE_STR:
