@@ -12,10 +12,23 @@ if __name__ == "__main__":
         type=str,
         help="Path to the collection.",
     )
+    parser.add_argument(
+        "--create_TM",
+        action="store_true",
+        help="whether to create TM",
+    )
+    parser.add_argument(
+        "--n_texts",
+        type=int,
+        default=float("inf"),
+        help="add only first n texts",
+    )
     args = parser.parse_args()
 
     add_text_pair_to_collection_pipeline(
         collection_path=Path(args.collection_path),
+        should_create_TM=args.create_TM,
+        run_for_first_n_texts=args.n_texts,
     )
 
     # for gradio_client threading
