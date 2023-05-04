@@ -4,7 +4,7 @@ from collections import Counter
 from collections.abc import Generator
 from functools import partial
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from . import config
 from . import types as t
@@ -98,10 +98,17 @@ def get_text_pairs(
     return text_pair_paths
 
 
+def get_text_id_from_text_pair_path(
+    text_pair_path: t.TEXT_PAIR_PATH,
+) -> t.TEXT_ID_NO_PREFIX:
+    """Get text id from text pair path."""
+    return text_pair_path["bo"].name[2:]
+
+
 def add_text_pair_to_collection_pipeline(
     collection_path: Path,
     should_create_TM=True,
-    run_for_first_n_texts: float = float("inf"),
+    text_ids: List[t.TEXT_ID_NO_PREFIX] = [],
 ) -> None:
     """Create collection from monlamAI text pair tracker.
 
@@ -117,10 +124,10 @@ def add_text_pair_to_collection_pipeline(
     text_pairs_tracker_path = download_textpairs_tracker_data()
     skip_text_callback = partial(skip_text, collection_path=collection_path)
     text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
-    n_texts = 0
     for text_pair_path in text_pair_paths:
-        if n_texts >= run_for_first_n_texts:
-            break
+        text_id = get_text_id_from_text_pair_path(text_pair_path)
+        if text_id not in text_ids:
+            continue
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
         )
@@ -130,4 +137,3 @@ def add_text_pair_to_collection_pipeline(
         time.sleep(3)
         if should_create_TM:
             create_TM(text_pair_view_path, text_id)
-        n_texts += 1
