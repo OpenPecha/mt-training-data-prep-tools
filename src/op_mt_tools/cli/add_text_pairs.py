@@ -18,17 +18,16 @@ if __name__ == "__main__":
         help="whether to create TM",
     )
     parser.add_argument(
-        "--n_texts",
-        type=int,
-        default=float("inf"),
-        help="add only first n texts",
+        "--text_ids",
+        nargs="+",
+        help="add only these text",
     )
     args = parser.parse_args()
 
     add_text_pair_to_collection_pipeline(
         collection_path=Path(args.collection_path),
         should_create_TM=False if args.skip_create_TM else True,
-        run_for_first_n_texts=args.n_texts,
+        text_ids=args.text_ids,
     )
 
     # for gradio_client threading
