@@ -124,9 +124,13 @@ def add_text_pair_to_collection_pipeline(
     text_pairs_tracker_path = download_textpairs_tracker_data()
     skip_text_callback = partial(skip_text, collection_path=collection_path)
     text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
+    hit_text_id = 0
     for text_pair_path in text_pair_paths:
+        if hit_text_id >= len(text_ids):
+            break
         text_id = get_text_id_from_text_pair_path(text_pair_path)
         if text_id not in text_ids:
+            hit_text_id += 1
             continue
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
