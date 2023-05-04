@@ -44,18 +44,20 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     # fmt: off
     opening_puncts = ['༁', '༂', '༃', '༄', '༅', '༆', '༇', '༈', '༉', '༊', '༑', '༒', '༺', '༼', '༿', '࿐', '࿑', '࿓', '࿔', '࿙']  # noqa: E501
     closing_puncts = ['།', '༎', '༏', '༐', '༔', '༴', '༻', '༽', '༾', '࿚']  # noqa: E501
+    skip_chunk_types = [botok.vars.CharMarkers.CJK.name, botok.vars.CharMarkers.LATIN.name]
     # fmt: on
 
     text = bo_preprocess(text)
     sents_text = ""
-    text = bo_preprocess(text)
     tokens = bo_word_tokenizer.tokenize(text)
     for token in tokens:
+        if token.chunk_type in skip_chunk_types:
+            continue
         token_text = get_token_text(token)
         if any(punct in token_text for punct in opening_puncts):
-            sents_text += token_text
+            sents_text += token_text.strip()
         elif any(punct in token_text for punct in closing_puncts):
-            sents_text += token_text + "\n"
+            sents_text += token_text.strip() + "\n"
         else:
             sents_text += token_text
 

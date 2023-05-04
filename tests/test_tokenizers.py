@@ -24,12 +24,13 @@ def test_bo_preprocess():
     assert bo_preprocess(text) == "ཀཀཀཀཀཀཀཀཀ"
 
 
-def test_bo_sent_tokenizer():
-    text = (
-        "༄༅། །\nརྗེ་\tབཙུན་མི\n་ལ་རས་པའི་རྣམ་ཐར་\r\nརྒྱས་པར་བཞུགས་སོ། །\n"
-        "༄༅༅། །ན་མོ་གུ་རུ། རྣལ་འབྱོར་གྱི་དབང་\tཕྱུག་རྗེ་བཙུན་མི་ལ་རས་པ་དེ་ཉིད།"
-    )
+def test_bo_sent_tokenizer_2():
+    text = """
+    TibetanBuddhistResourceCenterTextScan Input
+    ༄༅། །རྗེ་བཙུན་མི་ལ་རས་པའི་རྣམ་ཐར་རྒྱས་པར་ཕྱེ་བ་མགུར་འབུམ་ཞེས་བྱ་བ་བཞུགས་སོ། །
+    EMILY༄༅༅། །ན་མོ་གུ་རུ། རྣལ་འབྱོར་གྱི་དབང་ཕྱུག་རྗེ་(“”)བཙུན་མི་ལ་རས་པ་དེ་ཉིད།
+    """
+
     sents = bo_sent_tokenizer(text)
 
-    print(sents)
-    assert len(sents.splitlines()) == 5
+    assert len(sents.splitlines()) == 3
