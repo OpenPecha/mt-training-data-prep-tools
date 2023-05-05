@@ -1,3 +1,5 @@
+import re
+
 import botok
 import spacy
 
@@ -54,6 +56,11 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     skip_chunk_types = [botok.vars.CharMarkers.CJK.name, botok.vars.CharMarkers.LATIN.name]
     # fmt: on
 
+    r_replace = [
+        ("", "")
+        # (r"།\s+།", "།།"),
+    ]
+
     text = bo_preprocess(text)
     sents_text = ""
     tokenizer = get_bo_word_tokenizer()
@@ -68,6 +75,9 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
             sents_text += token_text.strip() + "\n"
         else:
             sents_text += token_text
+
+    for fr, to in r_replace:
+        sents_text = re.sub(fr, to, sents_text)
 
     return sents_text
 
