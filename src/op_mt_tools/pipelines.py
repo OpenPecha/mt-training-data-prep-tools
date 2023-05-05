@@ -113,8 +113,9 @@ def add_text_pair_to_collection_pipeline(
     """Create collection from monlamAI text pair tracker.
 
     Args:
-        path: Path to the monlamAI text pair tracker path.
         collection_path: Path to the collection.
+        should_create_TM: Whether to create TM.
+        text_ids: List of text ids to add to the collection. If empty, add all text ids.
     """
     print("[INFO] Pipeline running...")
 
@@ -126,11 +127,10 @@ def add_text_pair_to_collection_pipeline(
     text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
     hit_text_id = 0
     for text_pair_path in text_pair_paths:
-        if hit_text_id >= len(text_ids):
+        if text_ids and hit_text_id >= len(text_ids):
             break
         text_id = get_text_id_from_text_pair_path(text_pair_path)
-        if text_id not in text_ids:
-            hit_text_id += 1
+        if text_ids and text_id not in text_ids:
             continue
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
@@ -141,3 +141,4 @@ def add_text_pair_to_collection_pipeline(
         time.sleep(3)
         if should_create_TM:
             create_TM(text_pair_view_path, text_id)
+        hit_text_id += 1
