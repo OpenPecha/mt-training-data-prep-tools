@@ -1,11 +1,18 @@
 import botok
 import spacy
 
-bo_word_tokenizer = botok.WordTokenizer()
+bo_word_tokenizer = None
 nlp = spacy.load("en_core_web_sm")
 nlp.max_length = 2000000
 
 SENT_PER_LINE_STR = str  # sentence per line string
+
+
+def get_bo_word_tokenizer():
+    global bo_word_tokenizer
+    if bo_word_tokenizer is None:
+        bo_word_tokenizer = botok.WordTokenizer()
+    return bo_word_tokenizer
 
 
 def join_sentences(sentences):
@@ -49,7 +56,8 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
 
     text = bo_preprocess(text)
     sents_text = ""
-    tokens = bo_word_tokenizer.tokenize(text)
+    tokenizer = get_bo_word_tokenizer()
+    tokens = tokenizer.tokenize(text)
     for token in tokens:
         if token.chunk_type in skip_chunk_types:
             continue
