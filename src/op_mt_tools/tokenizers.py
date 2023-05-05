@@ -58,6 +58,7 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
 
     r_replace = [
         (r"༼༼[༠-༩]+[བན]༽", r""),    # delete source image numbers `ས་༼༤བ༽མེད་བ` 
+        (r"([^ང])་([༔།])", r"\1\2"),  # delete spurious spaces added by botok in the cleantext values
     ]
 
     text = bo_preprocess(text)
