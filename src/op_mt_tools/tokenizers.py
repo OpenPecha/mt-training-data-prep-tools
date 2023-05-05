@@ -56,9 +56,12 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     skip_chunk_types = [botok.vars.CharMarkers.CJK.name, botok.vars.CharMarkers.LATIN.name]
     # fmt: on
 
+    # Regex to improve the chunking of shunits, this will be replaced by a better sentence segmentation in botok
     r_replace = [
         (r"༼༼[༠-༩]+[བན]༽", r""),    # delete source image numbers `ས་༼༤བ༽མེད་བ` 
         (r"([^ང])་([༔།])", r"\1\2"),  # delete spurious spaces added by botok in the cleantext values
+        (r"([།གཤ]{1,2})\s+(།{1,2})", r"\1\2 "),   # Samdong Rinpoche style double shad. This needs to be applied on inference input
+        # (r"", r""),
     ]
 
     text = bo_preprocess(text)
