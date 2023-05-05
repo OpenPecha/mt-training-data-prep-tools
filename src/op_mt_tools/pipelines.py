@@ -14,7 +14,7 @@ from .tm import create_TM
 from .utils import clone_or_pull_repo, commit_and_push
 
 
-def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR, None, None]:
+def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR_ID, None, None]:
     print("[INFO] Finding completed text pairs...")
     text_ids = [int(fn.name[2:]) for fn in path.iterdir() if fn.suffix != ".md"]
     counter = Counter(text_ids)
@@ -49,24 +49,22 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
 
 
 def download_text_pair(
-    text_pair_ids: Generator[t.TEXT_PAIR, None, None],
-    skip_text_callback: Optional[Callable] = None,
-) -> Generator[t.TEXT_PAIR_PATH, None, None]:
+    text_pair_id: t.TEXT_PAIR_ID,
+) -> Optional[t.TEXT_PAIR_PATH]:
     """Download text pair from monlamAI."""
     print("[INFO] Downloading text pairs...")
-    for text_pair_id in text_pair_ids:
-        text_pair_path = {}
-        for lang_code, text_id in text_pair_id.items():
-            if skip_text_callback and skip_text_callback(text_id=text_id):
-                continue
-            text_file_exists, text_path = download_text(text_id)
-            if not text_file_exists:
-                break
-            text_pair_path[lang_code] = text_path
 
-        # only return text pair path if both texts exist
-        if len(text_pair_path) == 2:
-            yield text_pair_path
+    text_pair_path = {}
+    for lang_code, text_id in text_pair_id.items():
+        text_file_exists, text_path = download_text(text_id)
+        if not text_file_exists:
+            break
+        text_pair_path[lang_code] = text_path
+
+    # only return text pair path if both texts exist
+    if len(text_pair_path) == 2:
+        return text_pair_path
+    return None
 
 
 def download_textpairs_tracker_data() -> Path:
@@ -82,7 +80,7 @@ def download_textpairs_tracker_data() -> Path:
 
 
 def get_text_pairs(
-    path: Path, skip_text_callback: Optional[Callable] = None
+    path: Path, skip_callbacks: List[Callable] = []
 ) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
@@ -94,8 +92,19 @@ def get_text_pairs(
     """
     print("[INFO] Getting text pairs...")
     text_pair_ids = find_text_pair_ids(path)
-    text_pair_paths = download_text_pair(text_pair_ids, skip_text_callback)
-    return text_pair_paths
+    for text_pair_id in text_pair_ids:
+        text_id = text_pair_id["bo"]
+        should_skip = False
+        for skip_callback in skip_callbacks:
+            if skip_callback(text_id=text_id):
+                should_skip = True
+        if should_skip:
+            continue
+
+        text_pair_paths = download_text_pair(text_pair_id)
+
+        if text_pair_paths:
+            yield text_pair_paths
 
 
 def get_text_id_from_text_pair_path(
@@ -103,6 +112,13 @@ def get_text_id_from_text_pair_path(
 ) -> t.TEXT_ID_NO_PREFIX:
     """Get text id from text pair path."""
     return text_pair_path["bo"].name[2:]
+
+
+def text_not_in_text_ids(
+    text_id: t.TEXT_ID, text_ids: List[t.TEXT_ID_NO_PREFIX]
+) -> bool:
+    """Skip text if it's not in the list."""
+    return text_id[2:] not in text_ids
 
 
 def add_text_pair_to_collection_pipeline(
@@ -123,15 +139,17 @@ def add_text_pair_to_collection_pipeline(
         raise ValueError(f"Collection doesn't exist at {collection_path.resolve()}")
 
     text_pairs_tracker_path = download_textpairs_tracker_data()
-    skip_text_callback = partial(skip_text, collection_path=collection_path)
-    text_pair_paths = get_text_pairs(text_pairs_tracker_path, skip_text_callback)
-    hit_text_id = 0
+    skip_added_text = partial(skip_text, collection_path=collection_path)
+    skip_text_not_in_text_ids = partial(text_not_in_text_ids, text_ids=text_ids)
+    text_pair_paths = get_text_pairs(
+        text_pairs_tracker_path,
+        skip_callbacks=[
+            skip_added_text,
+            skip_text_not_in_text_ids,
+        ],
+    )
     for text_pair_path in text_pair_paths:
-        if text_ids and hit_text_id >= len(text_ids):
-            break
         text_id = get_text_id_from_text_pair_path(text_pair_path)
-        if text_ids and text_id not in text_ids:
-            continue
         text_id, text_pair_view_path = add_text_pair_to_collection(
             text_pair_path, collection_path
         )
@@ -141,4 +159,3 @@ def add_text_pair_to_collection_pipeline(
         time.sleep(3)
         if should_create_TM:
             create_TM(text_pair_view_path, text_id)
-        hit_text_id += 1
