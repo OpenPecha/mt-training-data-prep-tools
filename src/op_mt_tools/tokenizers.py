@@ -57,8 +57,7 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     # fmt: on
 
     r_replace = [
-        ("", "")
-        # (r"།\s+།", "།།"),
+        (r"༼༼[༠-༩]+[བན]༽", r""),    # delete source image numbers `ས་༼༤བ༽མེད་བ` 
     ]
 
     text = bo_preprocess(text)
