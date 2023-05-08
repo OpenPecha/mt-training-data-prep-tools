@@ -27,13 +27,9 @@ def en_preprocess(text: str) -> str:
     return text
 
 
-def en_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
+def en_sent_tokenizer(text: SENT_PER_LINE_STR) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
-
-    text = en_preprocess(text)
-    doc = nlp(text)
-    sents = [str(s) for s in doc.sents]
-    return join_sentences(sents)
+    return text
 
 
 def bo_preprocess(text: str) -> str:
