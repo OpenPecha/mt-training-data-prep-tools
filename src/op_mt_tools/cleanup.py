@@ -1,25 +1,28 @@
 import os
+import re
 from collections.abc import Generator
 from pathlib import Path
 from typing import List
 
 import openai
 
-CHATGPT_CONTEXT_LENGTH = 1024
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def get_text_chunks(text: str) -> Generator[str, None, None]:
-    start = 0
-    end = 0
-    while end > len(text):
-        end = text.find(
-            ".",
-            start,
-            start + CHATGPT_CONTEXT_LENGTH,
-        )
-        yield text[start:end]
-        start = end + 1
+def split_document(document, max_tokens=4096) -> Generator[str, None, None]:
+    sentences = re.split("(?<=[.!?]) +", document)
+    chunk = []
+
+    for sentence in sentences:
+        chunk.append(sentence)
+        # Check if the current chunk has more tokens than the limit
+        if len(" ".join(chunk).split()) > max_tokens:
+            # If it exceeds the limit, remove the last added sentence and store the chunk
+            chunk.pop()
+            chunk = [sentence]
+
+        yield " ".join(chunk)
+        chunk = []
 
 
 def get_completion(prompt, model="gpt-3.5-turbo"):
@@ -52,7 +55,7 @@ def cleaning_pipeline(fn: Path) -> Path:
     cleaned_fn = fn.parent / f"[GPT_CLEANED]_{fn.stem}.txt"
     text = fn.read_text(encoding="utf-8")
     with cleaned_fn.open("+a") as cleaned_file:
-        for chunk in get_text_chunks(text):
+        for chunk in split_document(text):
             sents = get_sents_with_chatgpt(chunk)
             cleaned_file.writelines(sents)
     return cleaned_fn
