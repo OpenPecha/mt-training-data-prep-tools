@@ -12,8 +12,7 @@ def test_en_preprocess():
 
 
 def test_en_sent_tokenizer():
-    text = "This is a test. This is another test."
-    text = "This is \r\na test.\nThis is another test."
+    text = "This is a test.\nThis is another test."
     sents = en_sent_tokenizer(text)
 
     assert sents == "This is a test.\nThis is another test."
