@@ -130,7 +130,9 @@ def cleanup_en(
         cleaned_fn.unlink()
     text = fn.read_text(encoding="utf-8")
     with cleaned_fn.open("+a") as cleaned_file:
-        for i, chunk in enumerate(split_document(text, prompt_template=CLEANUP_PROMPT)):
+        doc_chunks = split_document(text, prompt_template=CLEANUP_PROMPT)
+        for i, chunk in enumerate(doc_chunks):
+            print(f"\t- cleaning chunk {i+1}/{len(doc_chunks)} ...")
             sents = get_sents_with_chatgpt(chunk)
             cleaned_file.writelines(sents)
             if verbose:
@@ -140,5 +142,4 @@ def cleanup_en(
                 chunk_cleaned_fn = chunks_dir / f"{i:04}_chunk_cleaned.txt"
                 chunk_input_fn.write_text(chunk, encoding="utf-8")
                 chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
-            break
     return cleaned_fn

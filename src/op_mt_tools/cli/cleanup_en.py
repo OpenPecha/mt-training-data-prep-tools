@@ -29,14 +29,15 @@ if __name__ == "__main__":
 
     for text_id in args.text_ids:
         text_dir = config.TEXTS_PATH / text_id
-        print(f"[INFO] Downloading text {text_id}")
+        print(f"[INFO] Downloading {text_id} ...")
         clone_or_pull_repo(
             repo=text_id, org=GITHUB_ORG, token=GITHUB_TOKEN, local_path=text_dir
         )
+
+        print(f"[INFO] Cleaning {text_id} ...")
         for i, text_fn in enumerate(text_dir.glob("*.txt")):
-            print(f"\t- Cleaning up text file {i:04}...")
             cleaned_fn = cleanup_en(text_fn, verbose=args.verbose)
 
         if not args.skip_push:
-            print(f"[INFO] Pushing cleaned text {text_id}...")
+            print(f"[INFO] Pushing cleaned text {text_id} ...")
             commit_and_push(text_dir, msg="auto cleanup")
