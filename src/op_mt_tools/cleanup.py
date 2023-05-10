@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Generator
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import openai
 import tiktoken
@@ -113,12 +114,32 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
 
 def get_sents_with_chatgpt(text: str) -> List[str]:
     def parser_response(response: str) -> List[str]:
-        return response.split("- ")
+        return [sent.strip() for sent in response.split("- ") if sent.strip()]
 
     prompt = CLEANUP_PROMPT.format(text).strip()
     response = get_completion(prompt)
     sents = parser_response(response)
     return sents
+
+
+def get_chunks(text: str, parent: Path) -> Generator[Tuple[int, int, str], None, None]:
+    chunks_dir = parent / "chunks"
+    chunks_dir.mkdir(exist_ok=True)
+    split_completed_marker = chunks_dir / "split_completed"
+    if split_completed_marker.is_file():
+        chunks_fns = sorted(chunks_dir.glob("*_chunk.txt"))
+        for chunk_fn in chunks_fns:
+            chunk_cleaned_file = chunk_fn.parent / f"{chunk_fn.stem}_cleaned.txt"
+            if not chunk_cleaned_file.is_file():
+                chunk_id = int(chunk_fn.stem.split("_")[0])
+                yield chunk_id, len(chunks_fns), chunk_fn.read_text(encoding="utf-8")
+    else:
+        chunks = split_document(text, prompt_template=CLEANUP_PROMPT)
+        for chunk_id, chunk in enumerate(chunks, start=1):
+            chunk_fn = chunks_dir / f"{chunk_id:04}_chunk.txt"
+            chunk_fn.write_text(chunk, encoding="utf-8")
+            yield chunk_id, len(chunks), chunk
+        split_completed_marker.touch()
 
 
 def cleanup_en(
@@ -130,16 +151,11 @@ def cleanup_en(
         cleaned_fn.unlink()
     text = fn.read_text(encoding="utf-8")
     with cleaned_fn.open("+a") as cleaned_file:
-        doc_chunks = split_document(text, prompt_template=CLEANUP_PROMPT)
-        for i, chunk in enumerate(doc_chunks):
-            print(f"\t- cleaning chunk {i+1}/{len(doc_chunks)} ...")
+        doc_chunks = list(get_chunks(text, parent=fn.parent))
+        for chunk_id, chunks_len, chunk in doc_chunks:
+            print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
             sents = get_sents_with_chatgpt(chunk)
             cleaned_file.writelines(sents)
-            if verbose:
-                chunks_dir = fn.parent / "chunks"
-                chunks_dir.mkdir(exist_ok=True)
-                chunk_input_fn = chunks_dir / f"{i:04}_chunk_input.txt"
-                chunk_cleaned_fn = chunks_dir / f"{i:04}_chunk_cleaned.txt"
-                chunk_input_fn.write_text(chunk, encoding="utf-8")
-                chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
+            chunk_cleaned_fn = fn.parent / "chunks" / f"{chunk_id:04}_chunk_cleaned.txt"
+            chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
     return cleaned_fn
