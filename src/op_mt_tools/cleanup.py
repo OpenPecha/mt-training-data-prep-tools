@@ -44,24 +44,33 @@ def num_tokens_from_messages(text, model=OPENAI_MODEL):
     return len(encoding.encode(text)) + tokens_per_message
 
 
+# CLEANUP_PROMPT = """
+# Your task is to clean up the text delimited by triple backticks.
+
+# Here the criteria for cleaning up the text:
+# - Split the text into sentences.
+# - Combine chunks that are split across lines to form a sentence.
+# - Delete page numbers.
+# - Correct spelling mistakes.
+# - Delete any text that is not part of the story.
+
+# Never change the text unless it's a spelling mistake.
+# Required complete output.
+
+# Format
+
+
+# Text:
+# ```{}```
+# """
+
 CLEANUP_PROMPT = """
-Your task is to clean up the text delimited by triple backticks.
+Use text delimited by <>. \
+Split all sentences and format them as a bullet point list. \
+Join sentences that are split across lines. \
+Delete page numbers but don't change the text.
 
-Here the criteria for cleaning up the text:
-- Split the text sentences.
-- Combine chunks that are split across lines to form a sentence.
-- Delete page numbers.
-- Correct spelling mistakes.
-- Delete any text that is not part of the story.
-
-Never change the text unless it's a spelling mistake.
-Required complete output.
-
-Follow this output format:
-[OUTPUT]: JSON list with each sentence as it's items.
-
-Text:
-```{}```
+<{}>
 """
 
 
@@ -103,18 +112,33 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
 
 
 def get_sents_with_chatgpt(text: str) -> List[str]:
+    def parser_response(response: str) -> List[str]:
+        return response.split("- ")
+
     prompt = CLEANUP_PROMPT.format(text).strip()
     response = get_completion(prompt)
-    return response.split("\n")
+    sents = parser_response(response)
+    return sents
 
 
-def cleanup_en(fn: Path) -> Path:
+def cleanup_en(
+    fn: Path, cleaned_file_prefix: str = "[AUTO_CLEANED]", verbose: bool = False
+) -> Path:
     """Clean up english text using GPT-3."""
-    cleaned_fn = fn.parent / f"[GPT_CLEANED]_{fn.stem}.txt"
+    cleaned_fn = fn.parent / f"{cleaned_file_prefix}_{fn.stem}.txt"
+    if cleaned_fn.is_file():
+        cleaned_fn.unlink()
     text = fn.read_text(encoding="utf-8")
     with cleaned_fn.open("+a") as cleaned_file:
-        for chunk in split_document(text, prompt_template=CLEANUP_PROMPT):
+        for i, chunk in enumerate(split_document(text, prompt_template=CLEANUP_PROMPT)):
             sents = get_sents_with_chatgpt(chunk)
             cleaned_file.writelines(sents)
+            if verbose:
+                chunks_dir = fn.parent / "chunks"
+                chunks_dir.mkdir(exist_ok=True)
+                chunk_input_fn = chunks_dir / f"{i:04}_chunk_input.txt"
+                chunk_cleaned_fn = chunks_dir / f"{i:04}_chunk_cleaned.txt"
+                chunk_input_fn.write_text(chunk, encoding="utf-8")
+                chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
             break
     return cleaned_fn

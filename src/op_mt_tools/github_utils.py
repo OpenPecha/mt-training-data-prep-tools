@@ -71,7 +71,7 @@ def commit_and_push(path: Path) -> None:
     repo.remotes.origin.push()
 
 
-def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
+def clone_or_pull_repo_form_url(repo_url: str, local_repo_path: Path) -> Path:
     """Clone or pull repo."""
     if local_repo_path.is_dir():
         repo = Repo(local_repo_path)
@@ -82,6 +82,14 @@ def clone_or_pull_repo(repo_url: str, local_repo_path: Path) -> None:
         except cmd.GitCommandError as e:
             print(e)
             raise ValueError(f"Repo({repo_url}) doesn't exist")
+    return local_repo_path
+
+
+def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Path:
+    """Clone or pull repo."""
+    repo_url = f"https://{token}@github.com/{org}/{repo}.git"
+    local_path = clone_or_pull_repo_form_url(repo_url, local_path)
+    return local_path
 
 
 if __name__ == "__main__":
