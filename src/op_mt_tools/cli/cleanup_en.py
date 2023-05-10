@@ -39,4 +39,4 @@ if __name__ == "__main__":
 
         if not args.skip_push:
             print(f"[INFO] Pushing cleaned text {text_id}...")
-            commit_and_push(text_dir)
+            commit_and_push(text_dir, msg="auto cleanup")

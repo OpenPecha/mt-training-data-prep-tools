@@ -56,7 +56,7 @@ def download_first_text_file_from_github_repo(
     return None
 
 
-def commit_and_push(path: Path) -> None:
+def commit_and_push(path: Path, msg: str) -> None:
     """Commit and push local repo."""
     # configure git users
     subprocess.run(
@@ -67,7 +67,7 @@ def commit_and_push(path: Path) -> None:
     )
     repo = Repo(path)
     repo.git.add(".", "--all")
-    repo.git.commit("-m", "Add text pair")
+    repo.git.commit("-m", msg)
     repo.remotes.origin.push()
 
 
