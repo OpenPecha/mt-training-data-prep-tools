@@ -23,13 +23,18 @@ def join_sentences(sentences):
 
 
 def en_preprocess(text: str) -> str:
-    text = text.replace("\r", "").replace("\n", "")
+    re_sub = [(r"\r\n", " "), (r"\n", " "), (r"\s{2,}", " "), (r"\t", " ")]
+    for pattern, repl in re_sub:
+        text = re.sub(pattern, repl, text)
     return text
 
 
 def en_sent_tokenizer(text: SENT_PER_LINE_STR) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
-    return text
+    text = en_preprocess(text)
+    doc = nlp(text)
+    sentences = [sent.text for sent in doc.sents]
+    return join_sentences(sentences)
 
 
 def bo_preprocess(text: str) -> str:
@@ -81,7 +86,8 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
 def sent_tokenize(text, lang) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
     if lang == "en":
-        return en_sent_tokenizer(text)
+        # Asuming text is already sentence per line
+        return text
     elif lang == "bo":
         return bo_sent_tokenizer(text)
     else:

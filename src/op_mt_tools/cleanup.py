@@ -7,6 +7,8 @@ from typing import List, Tuple
 import openai
 import tiktoken
 
+from op_mt_tools.tokenizers import en_sent_tokenizer
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = "gpt-3.5-turbo-0301"
 CONTEXT_LENGTH = 4096
@@ -79,7 +81,7 @@ def split_document(document: str, prompt_template: str) -> List[str]:
     """Splits a document into chunks of text that are less than max_tokens long."""
     prompt_template_tokens = num_tokens_from_messages(prompt_template.format(""))
     max_tokens = (
-        CONTEXT_LENGTH // 3 - prompt_template_tokens
+        CONTEXT_LENGTH // 4 - prompt_template_tokens
     )  # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them#h_051eb08805  # noqa: E501
 
     chunks = []
@@ -159,3 +161,44 @@ def cleanup_en(
             chunk_cleaned_fn = fn.parent / "chunks" / f"{chunk_id:04}_chunk_cleaned.txt"
             chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
     return cleaned_fn
+
+
+def find_failed_cleanup_chunks(text_path: Path, overlap: float = 0.8) -> List[int]:
+    """Find chunks that failed to clean up based on char count overlap
+
+    Args:
+        fn (Path): path to text_path
+        overlap (float, optional): [description]. Defaults to 0.8.
+    """
+
+    def make_comparable(text: str) -> str:
+        text = re.sub(r"\s{2,}", "", text)
+        text = re.sub(r"\n", "", text)
+        return text
+
+    chunks_dir = text_path / "chunks"
+    chunks_fns = sorted(chunks_dir.glob("*_chunk.txt"))
+    failed_chunks = []
+    for chunk_fn in chunks_fns:
+        chunk_cleaned_fn = chunks_dir / f"{chunk_fn.stem}_cleaned.txt"
+        if chunk_cleaned_fn.is_file():
+            chunk = chunk_fn.read_text(encoding="utf-8")
+            chunk_cleaned = chunk_cleaned_fn.read_text(encoding="utf-8")
+            chunk_overlap = len(make_comparable(chunk_cleaned)) / len(
+                make_comparable(chunk)
+            )
+            if chunk_overlap < overlap:
+                chunk_id = int(chunk_fn.stem.split("_")[0])
+                failed_chunks.append(chunk_id)
+
+    return failed_chunks
+
+
+def split_chunk_into_sentence(text_path: Path) -> None:
+    chunks_dir = text_path / "chunks"
+    chunks_fns = sorted(chunks_dir.glob("*_chunk.txt"))
+    for chunk_fn in chunks_fns:
+        text = chunk_fn.read_text(encoding="utf-8")
+        sents_text = en_sent_tokenizer(text)
+        chunk_sents_fn = chunks_dir / f"{chunk_fn.stem}_sents.txt"
+        chunk_sents_fn.write_text(sents_text, encoding="utf-8")

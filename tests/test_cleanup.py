@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from op_mt_tools.cleanup import CLEANUP_PROMPT, cleanup_en, split_document
+from op_mt_tools.cleanup import (
+    CLEANUP_PROMPT,
+    cleanup_en,
+    find_failed_cleanup_chunks,
+    split_document,
+)
 
 
 @pytest.mark.skip(reason="Need to Mock OpenAI API")
@@ -21,3 +26,12 @@ def test_run_cleanup():
     cleaned_fn = cleanup_en(fn)
 
     assert cleaned_fn.is_file()
+
+
+@pytest.mark.skip(reason="Need to Mock OpenAI API")
+def test_find_failed_cleanup_chunks():
+    text_path = Path(__file__).parent / "manual" / "uncleaned_texts"
+
+    failed_chunks = find_failed_cleanup_chunks(text_path)
+
+    assert failed_chunks == [1]
