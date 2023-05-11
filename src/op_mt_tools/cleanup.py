@@ -79,7 +79,7 @@ def split_document(document: str, prompt_template: str) -> List[str]:
     """Splits a document into chunks of text that are less than max_tokens long."""
     prompt_template_tokens = num_tokens_from_messages(prompt_template.format(""))
     max_tokens = (
-        CONTEXT_LENGTH // 2 - prompt_template_tokens
+        CONTEXT_LENGTH // 3 - prompt_template_tokens
     )  # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them#h_051eb08805  # noqa: E501
 
     chunks = []
