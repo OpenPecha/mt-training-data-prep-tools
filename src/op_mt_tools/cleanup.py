@@ -12,6 +12,7 @@ from op_mt_tools.tokenizers import en_sent_tokenizer
 openai.api_key = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = "gpt-3.5-turbo-0301"
 CONTEXT_LENGTH = 4096
+CHUNK_MAX_TOKENS = 500  # smaller chunks give better result
 
 
 def num_tokens_from_messages(text, model=OPENAI_MODEL):
@@ -47,42 +48,26 @@ def num_tokens_from_messages(text, model=OPENAI_MODEL):
     return len(encoding.encode(text)) + tokens_per_message
 
 
-# CLEANUP_PROMPT = """
-# Your task is to clean up the text delimited by triple backticks.
-
-# Here the criteria for cleaning up the text:
-# - Split the text into sentences.
-# - Combine chunks that are split across lines to form a sentence.
-# - Delete page numbers.
-# - Correct spelling mistakes.
-# - Delete any text that is not part of the story.
-
-# Never change the text unless it's a spelling mistake.
-# Required complete output.
-
-# Format
-
-
-# Text:
-# ```{}```
-# """
-
 CLEANUP_PROMPT = """
-Use text delimited by <>. \
-Split all sentences and format them as a bullet point list. \
-Join sentences that are split across lines. \
-Delete page numbers but don't change the text.
+Act as a text cleaning tool. Strickly follow the cleaning steps below. Your input text is delimited by <>.\
 
+Cleaning Steps:
+1 - remove extra spaces
+2 - remove only brackets and numbers
+3 - fix spelling errors
+4 - split text in sentences
+5 - join sentence which are splited over multiple lines
+
+output each sentence on a newline.
+Do not report your steps and progress.
+
+Input Text:
 <{}>
 """
 
 
-def split_document(document: str, prompt_template: str) -> List[str]:
+def split_document(document: str, chunk_max_tokens=CHUNK_MAX_TOKENS) -> List[str]:
     """Splits a document into chunks of text that are less than max_tokens long."""
-    prompt_template_tokens = num_tokens_from_messages(prompt_template.format(""))
-    max_tokens = (
-        CONTEXT_LENGTH // 4 - prompt_template_tokens
-    )  # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them#h_051eb08805  # noqa: E501
 
     chunks = []
     current_chunk = []
@@ -91,7 +76,7 @@ def split_document(document: str, prompt_template: str) -> List[str]:
         current_chunk.append(sentence)
         # Check if the current chunk has more tokens than the limit
         tokens = num_tokens_from_messages(" ".join(current_chunk))
-        if tokens + prompt_template_tokens > max_tokens:
+        if tokens > chunk_max_tokens:
             # If it exceeds the limit, remove the last added sentence and store the chunk
             current_chunk.pop()
             chunks.append(" ".join(current_chunk))
@@ -114,11 +99,11 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
     return response.choices[0].message["content"]
 
 
-def get_sents_with_chatgpt(text: str) -> List[str]:
+def get_sents_with_chatgpt(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
     def parser_response(response: str) -> List[str]:
         return [sent.strip() for sent in response.split("- ") if sent.strip()]
 
-    prompt = CLEANUP_PROMPT.format(text).strip()
+    prompt = prompt_template.format(text).strip()
     response = get_completion(prompt)
     sents = parser_response(response)
     return sents
@@ -136,7 +121,7 @@ def get_chunks(text: str, parent: Path) -> Generator[Tuple[int, int, str], None,
                 chunk_id = int(chunk_fn.stem.split("_")[0])
                 yield chunk_id, len(chunks_fns), chunk_fn.read_text(encoding="utf-8")
     else:
-        chunks = split_document(text, prompt_template=CLEANUP_PROMPT)
+        chunks = split_document(text)
         for chunk_id, chunk in enumerate(chunks, start=1):
             chunk_fn = chunks_dir / f"{chunk_id:04}_chunk.txt"
             chunk_fn.write_text(chunk, encoding="utf-8")
