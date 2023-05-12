@@ -1,6 +1,9 @@
 import os
 import re
+import time
 from collections.abc import Generator
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 from pathlib import Path
 from typing import List, Tuple
 
@@ -105,10 +108,7 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
 
 def get_cleaned_sents(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
     def parser_response(response: STR_WITH_SENT_PER_LINE) -> List[str]:
-        sents = []
-        for sent in response.splitlines():
-            sents.extend(sent.split("."))
-        return sents
+        return [sent.strip() for sent in response.splitlines() if sent]
 
     prompt = prompt_template.format(text).strip()
     response = get_completion(prompt)
@@ -145,13 +145,17 @@ def combine_chunks(chunks_dir: Path, output_fn: Path):
     output_fn.write_text(text)
 
 
-def cleanup_en_chunks(chunks: List[Tuple[int, int, str]], chunks_dir: Path) -> None:
-    for chunk_id, chunks_len, chunk_fn in chunks:
-        print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
-        chunk_text = open(chunk_fn).read()
-        sents = get_cleaned_sents(chunk_text)
-        chunk_cleaned_fn = chunks_dir / f"{chunk_id:04}_chunk_cleaned.txt"
-        chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
+def cleanup_en_chunk(chunk: Tuple[int, int, str], chunks_dir: Path) -> None:
+    chunk_id, chunks_len, chunk_fn = chunk
+    start = time.time()
+    print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...", end="")
+    chunk_text = open(chunk_fn).read()
+    sents = get_cleaned_sents(chunk_text)
+    chunk_cleaned_fn = chunks_dir / f"{chunk_id:04}_chunk_cleaned.txt"
+    chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
+    end = time.time()
+    delta = end - start
+    print(f" {delta:.3f}s")
 
 
 def cleanup_en(
@@ -162,7 +166,9 @@ def cleanup_en(
     cleaned_fn = fn.parent / f"{cleaned_file_prefix}_{fn.stem}.txt"
     text = fn.read_text(encoding="utf-8")
     doc_chunks = list(get_chunks(text, chunks_dir=chunks_dir))
-    cleanup_en_chunks(doc_chunks, chunks_dir=chunks_dir)
+    cleanup_en_chunk_dir_set = partial(cleanup_en_chunk, chunks_dir=chunks_dir)
+    with ProcessPoolExecutor() as pool:
+        _ = list(pool.map(cleanup_en_chunk_dir_set, doc_chunks))
     combine_chunks(chunks_dir, cleaned_fn)
     return cleaned_fn
 

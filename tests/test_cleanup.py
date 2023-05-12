@@ -10,9 +10,10 @@ from op_mt_tools.cleanup import (
 )
 
 
-@pytest.mark.skip(reason="Need to Mock OpenAI API")
-def test_get_text_chunks():
-    text = "Hello World. Hello World"
+# @pytest.mark.skip(reason="Need to Mock OpenAI API")
+def test_split_document():
+    fn = Path(__file__).parent / "manual" / "uncleaned_texts" / "01.txt"
+    text = fn.read_text()
 
     sents = split_document(text)
 
