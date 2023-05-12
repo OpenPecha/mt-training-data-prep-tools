@@ -24,7 +24,6 @@ def run_batch_cleanup(args):
         print(f"[INFO] Cleaning {text_id} ...")
         for i, text_fn in enumerate(text_dir.glob("*.txt")):
             cleaned_fn = cleanup_en(text_fn, verbose=args.verbose)
-            print(f"[INFO] Pushing cleaned text {text_id} ...")
             print(f"[INFO] Cleaned text is saved at {cleaned_fn} ...")
 
         if not args.skip_push:

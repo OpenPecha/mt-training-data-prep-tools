@@ -98,6 +98,7 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
         model=model,
         messages=messages,
         temperature=0,  # this is the degree of randomness of the model's output
+        timeout=float("inf"),
     )
     return response.choices[0].message["content"]
 
@@ -117,8 +118,9 @@ def get_cleaned_sents(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
 
 def get_chunks(
     text: str, chunks_dir: Path
-) -> Generator[Tuple[int, int, Path], None, None]:
+) -> Generator[Tuple[int, int, str], None, None]:
     chunks_dir.mkdir(exist_ok=True)
+    chunks_dir = chunks_dir.resolve()
     split_completed_marker = chunks_dir / "split_completed"
     if split_completed_marker.is_file():
         chunks_fns = sorted(chunks_dir.glob("*_chunk.txt"))
@@ -126,20 +128,27 @@ def get_chunks(
             chunk_cleaned_file = chunk_fn.parent / f"{chunk_fn.stem}_cleaned.txt"
             if not chunk_cleaned_file.is_file():
                 chunk_id = int(chunk_fn.stem.split("_")[0])
-                yield chunk_id, len(chunks_fns), chunk_fn
+                yield chunk_id, len(chunks_fns), str(chunk_fn)
     else:
         chunks = split_document(text)
         for chunk_id, chunk in enumerate(chunks, start=1):
             chunk_fn = chunks_dir / f"{chunk_id:04}_chunk.txt"
             chunk_fn.write_text(chunk, encoding="utf-8")
-            yield chunk_id, len(chunks), chunk_fn
+            yield chunk_id, len(chunks), str(chunk_fn)
         split_completed_marker.touch()
 
 
-def cleanup_en_chunks(chunks: List[Tuple[int, int, Path]], chunks_dir: Path) -> None:
+def combine_chunks(chunks_dir: Path, output_fn: Path):
+    text = ""
+    for chunk_fn in sorted(chunks_dir.glob("*_chunk_cleaned.txt")):
+        text += chunk_fn.read_text() + "\n"
+    output_fn.write_text(text)
+
+
+def cleanup_en_chunks(chunks: List[Tuple[int, int, str]], chunks_dir: Path) -> None:
     for chunk_id, chunks_len, chunk_fn in chunks:
         print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
-        chunk_text = chunk_fn.read_text()
+        chunk_text = open(chunk_fn).read()
         sents = get_cleaned_sents(chunk_text)
         chunk_cleaned_fn = chunks_dir / f"{chunk_id:04}_chunk_cleaned.txt"
         chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
@@ -154,6 +163,7 @@ def cleanup_en(
     text = fn.read_text(encoding="utf-8")
     doc_chunks = list(get_chunks(text, chunks_dir=chunks_dir))
     cleanup_en_chunks(doc_chunks, chunks_dir=chunks_dir)
+    combine_chunks(chunks_dir, cleaned_fn)
     return cleaned_fn
 
 

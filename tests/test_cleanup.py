@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 from op_mt_tools.cleanup import (
-    CLEANUP_PROMPT,
     cleanup_en,
+    combine_chunks,
     find_failed_cleanup_chunks,
     split_document,
 )
@@ -14,7 +14,7 @@ from op_mt_tools.cleanup import (
 def test_get_text_chunks():
     text = "Hello World. Hello World"
 
-    sents = split_document(text, prompt_template=CLEANUP_PROMPT)
+    sents = split_document(text)
 
     assert sents == ["Hello World.", "Hello World"]
 
@@ -35,3 +35,14 @@ def test_find_failed_cleanup_chunks():
     failed_chunks = find_failed_cleanup_chunks(text_path)
 
     assert failed_chunks == [1]
+
+
+@pytest.mark.skip(reason="need large data")
+def test_combine_chunks():
+    text_dir = Path(__file__).parent / "manual" / "uncleaned_texts"
+    chunks_dir = text_dir / "chunks"
+    output_fn = text_dir / "[AUTO_CLEANED]_01.txt"
+
+    combine_chunks(chunks_dir, output_fn)
+
+    assert output_fn.is_file()
