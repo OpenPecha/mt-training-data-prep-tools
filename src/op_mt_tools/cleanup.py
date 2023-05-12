@@ -14,6 +14,9 @@ OPENAI_MODEL = "gpt-3.5-turbo-0301"
 CONTEXT_LENGTH = 4096
 CHUNK_MAX_TOKENS = 500  # smaller chunks give better result
 
+# types
+STR_WITH_SENT_PER_LINE = str
+
 
 def num_tokens_from_messages(text, model=OPENAI_MODEL):
     """Returns the number of tokens used by a list of messages."""
@@ -99,9 +102,12 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
     return response.choices[0].message["content"]
 
 
-def get_sents_with_chatgpt(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
-    def parser_response(response: str) -> List[str]:
-        return [sent.strip() for sent in response.split("- ") if sent.strip()]
+def get_cleaned_sents(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
+    def parser_response(response: STR_WITH_SENT_PER_LINE) -> List[str]:
+        sents = []
+        for sent in response.splitlines():
+            sents.extend(sent.split("."))
+        return sents
 
     prompt = prompt_template.format(text).strip()
     response = get_completion(prompt)
@@ -109,8 +115,9 @@ def get_sents_with_chatgpt(text: str, prompt_template=CLEANUP_PROMPT) -> List[st
     return sents
 
 
-def get_chunks(text: str, parent: Path) -> Generator[Tuple[int, int, str], None, None]:
-    chunks_dir = parent / "chunks"
+def get_chunks(
+    text: str, chunks_dir: Path
+) -> Generator[Tuple[int, int, str], None, None]:
     chunks_dir.mkdir(exist_ok=True)
     split_completed_marker = chunks_dir / "split_completed"
     if split_completed_marker.is_file():
@@ -129,22 +136,25 @@ def get_chunks(text: str, parent: Path) -> Generator[Tuple[int, int, str], None,
         split_completed_marker.touch()
 
 
+def cleanup_en_chunks(chunks: List[Tuple[int, int, str]], chunks_dir: Path) -> None:
+    for chunk_id, chunks_len, chunk in chunks:
+        print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
+        sents = get_cleaned_sents(chunk)
+        chunk_cleaned_fn = chunks_dir / f"{chunk_id:04}_chunk_cleaned.txt"
+        chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
+
+
 def cleanup_en(
     fn: Path, cleaned_file_prefix: str = "[AUTO_CLEANED]", verbose: bool = False
 ) -> Path:
     """Clean up english text using GPT-3."""
+    chunks_dir = fn.parent / "chunks"
     cleaned_fn = fn.parent / f"{cleaned_file_prefix}_{fn.stem}.txt"
     if cleaned_fn.is_file():
         cleaned_fn.unlink()
     text = fn.read_text(encoding="utf-8")
-    with cleaned_fn.open("+a") as cleaned_file:
-        doc_chunks = list(get_chunks(text, parent=fn.parent))
-        for chunk_id, chunks_len, chunk in doc_chunks:
-            print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
-            sents = get_sents_with_chatgpt(chunk)
-            cleaned_file.writelines(sents)
-            chunk_cleaned_fn = fn.parent / "chunks" / f"{chunk_id:04}_chunk_cleaned.txt"
-            chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
+    doc_chunks = list(get_chunks(text, chunks_dir=chunks_dir))
+    cleanup_en_chunks(doc_chunks, chunks_dir=chunks_dir)
     return cleaned_fn
 
 
