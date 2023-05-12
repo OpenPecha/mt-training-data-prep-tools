@@ -117,7 +117,7 @@ def get_cleaned_sents(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
 
 def get_chunks(
     text: str, chunks_dir: Path
-) -> Generator[Tuple[int, int, str], None, None]:
+) -> Generator[Tuple[int, int, Path], None, None]:
     chunks_dir.mkdir(exist_ok=True)
     split_completed_marker = chunks_dir / "split_completed"
     if split_completed_marker.is_file():
@@ -126,20 +126,21 @@ def get_chunks(
             chunk_cleaned_file = chunk_fn.parent / f"{chunk_fn.stem}_cleaned.txt"
             if not chunk_cleaned_file.is_file():
                 chunk_id = int(chunk_fn.stem.split("_")[0])
-                yield chunk_id, len(chunks_fns), chunk_fn.read_text(encoding="utf-8")
+                yield chunk_id, len(chunks_fns), chunk_fn
     else:
         chunks = split_document(text)
         for chunk_id, chunk in enumerate(chunks, start=1):
             chunk_fn = chunks_dir / f"{chunk_id:04}_chunk.txt"
             chunk_fn.write_text(chunk, encoding="utf-8")
-            yield chunk_id, len(chunks), chunk
+            yield chunk_id, len(chunks), chunk_fn
         split_completed_marker.touch()
 
 
-def cleanup_en_chunks(chunks: List[Tuple[int, int, str]], chunks_dir: Path) -> None:
-    for chunk_id, chunks_len, chunk in chunks:
+def cleanup_en_chunks(chunks: List[Tuple[int, int, Path]], chunks_dir: Path) -> None:
+    for chunk_id, chunks_len, chunk_fn in chunks:
         print(f"\t- cleaning chunk {chunk_id}/{chunks_len} ...")
-        sents = get_cleaned_sents(chunk)
+        chunk_text = chunk_fn.read_text()
+        sents = get_cleaned_sents(chunk_text)
         chunk_cleaned_fn = chunks_dir / f"{chunk_id:04}_chunk_cleaned.txt"
         chunk_cleaned_fn.write_text("\n".join(sents), encoding="utf-8")
 
@@ -150,8 +151,6 @@ def cleanup_en(
     """Clean up english text using GPT-3."""
     chunks_dir = fn.parent / "chunks"
     cleaned_fn = fn.parent / f"{cleaned_file_prefix}_{fn.stem}.txt"
-    if cleaned_fn.is_file():
-        cleaned_fn.unlink()
     text = fn.read_text(encoding="utf-8")
     doc_chunks = list(get_chunks(text, chunks_dir=chunks_dir))
     cleanup_en_chunks(doc_chunks, chunks_dir=chunks_dir)
