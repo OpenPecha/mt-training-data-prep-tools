@@ -1,11 +1,12 @@
 import re
 
 import botok
-import spacy
+from spacy.lang.en import English
 
 bo_word_tokenizer = None
-nlp = spacy.load("en_core_web_sm")
-nlp.max_length = 5000000
+en_nlp = English()
+en_nlp.add_pipe("sentencizer")
+en_nlp.max_length = 5000000
 
 SENT_PER_LINE_STR = str  # sentence per line string
 
@@ -32,7 +33,7 @@ def en_preprocess(text: str) -> str:
 def en_sent_tokenizer(text: SENT_PER_LINE_STR) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
     text = en_preprocess(text)
-    doc = nlp(text)
+    doc = en_nlp(text)
     sentences = [sent.text for sent in doc.sents]
     return join_sentences(sentences)
 
