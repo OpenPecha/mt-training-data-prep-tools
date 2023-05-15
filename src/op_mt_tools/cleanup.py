@@ -77,8 +77,8 @@ def split_document(document: str, chunk_max_tokens=CHUNK_MAX_TOKENS) -> List[str
 
     chunks = []
     current_chunk = []
-    sentences = re.split("(?<=[.!?])", document)
-    for sentence in sentences:
+    sents = en_sent_tokenizer(document).splitlines()
+    for sentence in sents:
         current_chunk.append(sentence)
         # Check if the current chunk has more tokens than the limit
         tokens = num_tokens_from_messages(" ".join(current_chunk))
@@ -159,7 +159,7 @@ def cleanup_en_chunk(chunk: Tuple[int, int, str], chunks_dir: Path) -> None:
 
 
 def cleanup_en(
-    fn: Path, cleaned_file_prefix: str = "[AUTO_CLEANED]", verbose: bool = False
+    fn: Path, cleaned_file_prefix: str = "[CLEANED]", verbose: bool = False
 ) -> Path:
     """Clean up english text using GPT-3."""
     chunks_dir = fn.parent / "chunks"

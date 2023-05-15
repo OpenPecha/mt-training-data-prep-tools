@@ -8,7 +8,7 @@ from op_mt_tools.tokenizers import (
 
 def test_en_preprocess():
     text = "This is \r\na test.\nThis is another test."
-    assert en_preprocess(text) == "This is a test.This is another test."
+    assert en_preprocess(text) == "This is a test. This is another test."
 
 
 def test_en_sent_tokenizer():
