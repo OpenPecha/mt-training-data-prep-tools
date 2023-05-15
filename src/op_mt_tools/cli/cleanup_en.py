@@ -77,6 +77,10 @@ def main():
         action="store_true",
     )
     batch_cleanup.add_argument(
+        "--verbose",
+        action="store_true",
+    )
+    batch_cleanup.add_argument(
         "--skip_push",
         action="store_true",
     )
