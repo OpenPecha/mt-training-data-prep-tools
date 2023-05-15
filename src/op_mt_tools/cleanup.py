@@ -105,7 +105,7 @@ def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
             timeout=float("inf"),
         )
         return response.choices[0].message["content"]
-    except openai.APIError:
+    except openai.OpenAIError:
         print("Rate limit error. Waiting 5 seconds and trying again.")
         time.sleep(5)
         return get_completion(prompt, model=model)
