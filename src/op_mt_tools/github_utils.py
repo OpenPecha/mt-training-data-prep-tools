@@ -8,10 +8,7 @@ from git import Repo, cmd
 
 
 def download_first_text_file_from_github_repo(
-    repo_owner: str,
-    repo_name: str,
-    token: str,
-    output_path: Path,
+    repo_owner: str, repo_name: str, token: str, output_path: Path, prefix: str = ""
 ) -> Optional[Path]:
     """Download text files from a GitHub repository.
 
@@ -40,7 +37,9 @@ def download_first_text_file_from_github_repo(
     text_files = [
         file
         for file in files
-        if file["path"].endswith(".txt") and file["type"] == "file"
+        if file["type"] == "file"
+        and file["path"].endswith(".txt")
+        and file["name"].startswith(prefix)
     ]
 
     # Download each text file
@@ -95,13 +94,14 @@ def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Pat
 if __name__ == "__main__":
     import tempfile
 
+    print("downloading file...")
     with tempfile.TemporaryDirectory() as tmp_path:
         output_path = Path(tmp_path) / "text"
         output_path.mkdir(parents=True, exist_ok=True)
         repo_owner = "MonlamAI"
-        repo_name = "BO0722"
+        repo_name = "EN0711"
         token = os.environ["GITHUB_TOKEN"]
         downloaded_files = download_first_text_file_from_github_repo(
-            repo_owner, repo_name, token, output_path
+            repo_owner, repo_name, token, output_path, prefix="[CLEANED]"
         )
         print(downloaded_files)
