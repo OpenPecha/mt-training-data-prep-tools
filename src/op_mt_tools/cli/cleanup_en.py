@@ -14,8 +14,22 @@ GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 
 
 def run_batch_cleanup(args):
+    def check_if_text_is_cleaned(text_id):
+        text_dir = config.TEXTS_PATH / text_id
+        return any(
+            [
+                fn.stem.startswith(config.CLEANDED_TEXT_PREFIX)
+                for fn in text_dir.glob("*.txt")
+            ]
+        )
+
     for text_id in args.text_ids:
         text_dir = config.TEXTS_PATH / text_id
+
+        if not args.replace and check_if_text_is_cleaned(text_id):
+            print(f"[INFO] {text_id} already cleaned. Skipping ...")
+            continue
+
         print(f"[INFO] Downloading {text_id} ...")
         clone_or_pull_repo(
             repo=text_id, org=GITHUB_ORG, token=GITHUB_TOKEN, local_path=text_dir
@@ -59,7 +73,7 @@ def main():
         help="list of text ids to clean up",
     )
     batch_cleanup.add_argument(
-        "--verbose",
+        "--replace",
         action="store_true",
     )
     batch_cleanup.add_argument(
