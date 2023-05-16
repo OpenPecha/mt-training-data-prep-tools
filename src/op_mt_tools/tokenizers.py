@@ -96,8 +96,7 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
 def sent_tokenize(text, lang) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
     if lang == "en":
-        # Asuming text is already sentence per line
-        return text
+        return en_sent_tokenizer(text)
     elif lang == "bo":
         return bo_sent_tokenizer(text)
     else:
