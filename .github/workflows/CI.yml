@@ -12,6 +12,12 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_USERNAME: "x"
+      GITHUB_TOKEN: "x"
+      GITHUB_EMAIL: "x"
+      MAI_GITHUB_ORG: "x"
+      OPENPECHA_DATA_GITHUB_ORG: "x"
 
     steps:
       - uses: actions/checkout@v3
