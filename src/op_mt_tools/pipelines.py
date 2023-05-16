@@ -151,12 +151,16 @@ def add_text_pair_to_collection_pipeline(
     )
     for text_pair_path in text_pair_paths:
         text_id = get_text_id_from_text_pair_path(text_pair_path)
-        text_id, text_pair_view_path = add_text_pair_to_collection(
-            text_pair_path, collection_path
-        )
-        if not text_id:
+        try:
+            text_id, text_pair_view_path = add_text_pair_to_collection(
+                text_pair_path, collection_path
+            )
+            if not text_id:
+                continue
+            commit_and_push(collection_path)
+            time.sleep(3)
+            if should_create_TM:
+                create_TM(text_pair_view_path, text_id)
+        except Exception as e:
+            print(f"[ERROR] Failed to add text pair {text_id}: {e}")
             continue
-        commit_and_push(collection_path)
-        time.sleep(3)
-        if should_create_TM:
-            create_TM(text_pair_view_path, text_id)

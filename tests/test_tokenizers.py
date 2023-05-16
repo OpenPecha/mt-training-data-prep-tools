@@ -18,6 +18,14 @@ def test_en_sent_tokenizer():
     assert sents == "This is a test.\nThis is another test."
 
 
+def test_en_sent_tokenizer_check_output():
+    text = ""
+    sents = en_sent_tokenizer(text)
+
+    print("\n-----------------------")
+    print(sents)
+
+
 def test_bo_preprocess():
     text = "ཀཀཀ\nཀཀཀ\r\nཀཀཀ\n"
     assert bo_preprocess(text) == "ཀཀཀཀཀཀཀཀཀ"
