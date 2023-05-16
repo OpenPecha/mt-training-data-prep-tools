@@ -55,16 +55,16 @@ def num_tokens_from_messages(text, model=OPENAI_MODEL):
 
 
 CLEANUP_PROMPT = """
-Act as a text cleaning tool. Strickly follow the cleaning steps below. Your input text is delimited by <>.\
+Act as a text-cleaning pipeline. Strictly follow the cleaning steps below. Your input text is delimited by <>.
 
 Cleaning Steps:
-1 - remove extra spaces
-2 - remove only brackets and numbers
-3 - fix spelling errors
-4 - split text in sentences
-5 - join sentence which are splited over multiple lines
+1 - remove extra spaces.
+2 - remove only brackets and numbers.
+3 - fix spelling errors.
+4 - split text into sentences.
+5 - join sentence which are split over multiple lines.
 
-output each sentence on a newline.
+Output each sentence on a new line.
 Do not report your steps and progress.
 
 Input Text:
