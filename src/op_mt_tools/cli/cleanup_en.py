@@ -26,14 +26,14 @@ def run_batch_cleanup(args):
     for text_id in args.text_ids:
         text_dir = config.TEXTS_PATH / text_id
 
-        if not args.replace and check_if_text_is_cleaned(text_id):
-            print(f"[INFO] {text_id} already cleaned. Skipping ...")
-            continue
-
         print(f"[INFO] Downloading {text_id} ...")
         clone_or_pull_repo(
             repo=text_id, org=GITHUB_ORG, token=GITHUB_TOKEN, local_path=text_dir
         )
+
+        if not args.replace and check_if_text_is_cleaned(text_id):
+            print(f"[INFO] {text_id} already cleaned. Skipping ...")
+            continue
 
         print(f"[INFO] Cleaning {text_id} ...")
         for i, text_fn in enumerate(text_dir.glob("*.txt")):
