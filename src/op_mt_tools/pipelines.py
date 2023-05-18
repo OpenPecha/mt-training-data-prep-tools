@@ -146,10 +146,11 @@ def add_text_pair_to_collection_pipeline(
     if not collection_path.is_dir():
         raise ValueError(f"Collection doesn't exist at {collection_path.resolve()}")
 
-    if not text_ids:
-        text_pairs_tracker_path = download_textpairs_tracker_data()
-    else:
+    if text_ids:
+        print("[INFO] Using text ids provided: ", text_ids)
         text_pairs_tracker_path = None
+    else:
+        text_pairs_tracker_path = download_textpairs_tracker_data()
 
     skip_added_text = partial(skip_text, collection_path=collection_path)
     text_pair_paths = get_text_pairs(
