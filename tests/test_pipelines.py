@@ -22,15 +22,34 @@ def create_monlamAI_tracker_data(path, n):
 
 
 @mock.patch("op_mt_tools.pipelines.download_text")
-def test_get_text_pairs(mock_download_text, tmp_path):
+def test_get_text_pairs_from_tracker(mock_download_text, tmp_path):
     path = create_monlamAI_tracker_data(tmp_path, 4)  # creates only BO0002 and EN0002
     text_download_path = tmp_path / "texts"
     mock_download_text.return_value = True, text_download_path
 
-    text_pair_paths = list(get_text_pairs(path))
+    text_pair_paths = list(get_text_pairs(text_pairs_tracker_path=path))
 
     assert text_pair_paths == [{"bo": text_download_path, "en": text_download_path}]
     assert mock_download_text.call_count == 2
+    assert mock.call("BO0002") in mock_download_text.call_args_list
+    assert mock.call("EN0002") in mock_download_text.call_args_list
+
+
+@mock.patch("op_mt_tools.pipelines.download_text")
+def test_get_text_pairs_with_text_ids(mock_download_text, tmp_path):
+    text_ids = ["0001", "0002"]
+    text_download_path = tmp_path / "texts"
+    mock_download_text.return_value = True, text_download_path
+
+    text_pair_paths = list(get_text_pairs(text_ids=text_ids))
+
+    assert text_pair_paths == [
+        {"bo": text_download_path, "en": text_download_path},
+        {"bo": text_download_path, "en": text_download_path},
+    ]
+    assert mock_download_text.call_count == 4
+    assert mock.call("BO0001") in mock_download_text.call_args_list
+    assert mock.call("EN0001") in mock_download_text.call_args_list
     assert mock.call("BO0002") in mock_download_text.call_args_list
     assert mock.call("EN0002") in mock_download_text.call_args_list
 

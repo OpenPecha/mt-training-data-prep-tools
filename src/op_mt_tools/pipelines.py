@@ -23,6 +23,13 @@ def find_text_pair_ids(path: Path) -> Generator[t.TEXT_PAIR_ID, None, None]:
         yield {"bo": f"BO{id_:04d}", "en": f"EN{id_:04d}"}
 
 
+def get_text_pair_ids(
+    text_ids: List[t.TEXT_ID_NO_PREFIX],
+) -> Generator[t.TEXT_PAIR_ID, None, None]:
+    for text_id in text_ids:
+        yield {"bo": f"BO{text_id}", "en": f"EN{text_id}"}
+
+
 def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
     """Download text from monlamAI.
 
@@ -81,7 +88,9 @@ def download_textpairs_tracker_data() -> Path:
 
 
 def get_text_pairs(
-    path: Path, skip_callbacks: List[Callable] = []
+    text_ids: List[t.TEXT_ID_NO_PREFIX] = [],
+    text_pairs_tracker_path: Optional[Path] = None,
+    skip_callbacks: List[Callable] = [],
 ) -> Generator[t.TEXT_PAIR_PATH, None, None]:
     """Find text pairs id in `path` and download them.
 
@@ -92,7 +101,12 @@ def get_text_pairs(
         List of text pair paths.
     """
     print("[INFO] Getting text pairs...")
-    text_pair_ids = find_text_pair_ids(path)
+    if text_ids:
+        text_pair_ids = get_text_pair_ids(text_ids=text_ids)
+    elif text_pairs_tracker_path:
+        text_pair_ids = find_text_pair_ids(path=text_pairs_tracker_path)
+    else:
+        raise ValueError("Either text_ids or text_pairs_tracker_path must be provided.")
     for text_pair_id in text_pair_ids:
         text_id = text_pair_id["bo"]
         should_skip = False
@@ -115,13 +129,6 @@ def get_text_id_from_text_pair_path(
     return text_pair_path["bo"].name[2:]
 
 
-def text_not_in_text_ids(
-    text_id: t.TEXT_ID, text_ids: List[t.TEXT_ID_NO_PREFIX]
-) -> bool:
-    """Skip text if it's not in the list."""
-    return text_id[2:] not in text_ids
-
-
 def add_text_pair_to_collection_pipeline(
     collection_path: Path,
     should_create_TM=True,
@@ -139,16 +146,20 @@ def add_text_pair_to_collection_pipeline(
     if not collection_path.is_dir():
         raise ValueError(f"Collection doesn't exist at {collection_path.resolve()}")
 
-    text_pairs_tracker_path = download_textpairs_tracker_data()
+    if not text_ids:
+        text_pairs_tracker_path = download_textpairs_tracker_data()
+    else:
+        text_pairs_tracker_path = None
+
     skip_added_text = partial(skip_text, collection_path=collection_path)
-    skip_text_not_in_text_ids = partial(text_not_in_text_ids, text_ids=text_ids)
     text_pair_paths = get_text_pairs(
-        text_pairs_tracker_path,
+        text_ids=text_ids,
+        text_pairs_tracker_path=text_pairs_tracker_path,
         skip_callbacks=[
             skip_added_text,
-            skip_text_not_in_text_ids,
         ],
     )
+
     for text_pair_path in text_pair_paths:
         text_id = get_text_id_from_text_pair_path(text_pair_path)
         try:
