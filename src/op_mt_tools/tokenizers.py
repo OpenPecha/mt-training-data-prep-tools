@@ -1,4 +1,5 @@
 import re
+from typing import List
 
 import botok
 from spacy.lang.en import English
@@ -36,6 +37,13 @@ def en_sent_tokenizer(text: SENT_PER_LINE_STR) -> SENT_PER_LINE_STR:
     doc = en_nlp(text)
     sentences = [sent.text for sent in doc.sents]
     return join_sentences(sentences)
+
+
+def en_word_tokenizer(text: str) -> List[str]:
+    """Tokenize a text into words."""
+    doc = en_nlp(text)
+    words = [token.text for token in doc]
+    return words
 
 
 def bo_preprocess(text: str) -> str:

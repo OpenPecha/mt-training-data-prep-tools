@@ -3,7 +3,14 @@ from op_mt_tools.tokenizers import (
     bo_sent_tokenizer,
     en_preprocess,
     en_sent_tokenizer,
+    en_word_tokenizer,
 )
+
+
+def test_en_word_tokenizer():
+    text = "This is a test."
+    tokens = en_word_tokenizer(text)
+    assert tokens == ["This", "is", "a", "test", "."]
 
 
 def test_en_preprocess():
