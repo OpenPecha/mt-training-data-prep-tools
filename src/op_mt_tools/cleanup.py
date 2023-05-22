@@ -7,6 +7,7 @@ from functools import partial
 from pathlib import Path
 from typing import List, Tuple
 
+import backoff
 import openai
 import tiktoken
 
@@ -95,20 +96,16 @@ def split_document(document: str, chunk_max_tokens=CHUNK_MAX_TOKENS) -> List[str
     return chunks
 
 
+@backoff.on_exception(backoff.expo, openai.OpenAIError)
 def get_completion(prompt: str, model=OPENAI_MODEL) -> str:
     messages = [{"role": "user", "content": prompt}]
-    try:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=messages,
-            temperature=0,  # this is the degree of randomness of the model's output
-            timeout=float("inf"),
-        )
-        return response.choices[0].message["content"]
-    except openai.OpenAIError:
-        print("Rate limit error. Waiting 5 seconds and trying again.")
-        time.sleep(5)
-        return get_completion(prompt, model=model)
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=0,
+        timeout=float("inf"),
+    )
+    return response.choices[0].message["content"]
 
 
 def get_cleaned_sents(text: str, prompt_template=CLEANUP_PROMPT) -> List[str]:
