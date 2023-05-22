@@ -1,7 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import requests
 from git import Repo, cmd
@@ -89,6 +89,22 @@ def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Pat
     repo_url = f"https://{token}@github.com/{org}/{repo}.git"
     local_path = clone_or_pull_repo_form_url(repo_url, local_path)
     return local_path
+
+
+def get_github_repos_with_prefix(
+    org: str, token: str, prefix: str
+) -> List[Optional[str]]:
+    """Search all repo with matching name of `name_or_prefix` in `org`."""
+    ...
+    url = f"https://api.github.com/search/repositories?q=user:{org}+{prefix}in:name&sort=stars&order=desc"
+    headers = {"Authorization": f"token {token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        repos_json = response.json()
+        return [repo["name"] for repo in repos_json["items"]]
+    else:
+        print(f"Request failed with status {response.status_code}")
+        return []
 
 
 if __name__ == "__main__":

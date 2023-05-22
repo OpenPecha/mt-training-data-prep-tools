@@ -6,13 +6,13 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from gradio_client import Client
 from gradio_client.utils import Status as JobStatus
 
 from . import types as t
-from .github_utils import commit_and_push
+from .github_utils import commit_and_push, get_github_repos_with_prefix
 
 client = None
 
@@ -85,9 +85,12 @@ def create_TM(text_pair_view_path: Dict[t.LANG_CODE, Path], text_id: str) -> str
         return status
 
 
-def get_all_TMs() -> List[str]:
+def get_all_TMs() -> List[Optional[str]]:
     """Get all latest TMs."""
-    return ["TM0504", "TM0749"]
+    org = os.environ["MAI_GITHUB_ORG"]
+    token = os.environ["GITHUB_TOKEN"]
+    repos = get_github_repos_with_prefix(org, token, "TM")
+    return repos
 
 
 def export_TM(tm: str, export_dir: Path):
@@ -99,7 +102,10 @@ def export_TM(tm: str, export_dir: Path):
 def export_all_TMs(export_dir: Path):
     """Export all latest TMs."""
     print("[INFO] Exporting all TMs...")
+
     for tm in get_all_TMs():
+        if not tm:
+            continue
         export_TM(tm, export_dir)
 
     msg = "add latest TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
