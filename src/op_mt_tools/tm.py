@@ -1,14 +1,18 @@
+import argparse
 import json
 import logging
+import os
+import subprocess
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 from gradio_client import Client
 from gradio_client.utils import Status as JobStatus
 
 from . import types as t
+from .github_utils import commit_and_push
 
 client = None
 
@@ -79,3 +83,33 @@ def create_TM(text_pair_view_path: Dict[t.LANG_CODE, Path], text_id: str) -> str
         )
         status = run_aligner(request_body_json_fn)
         return status
+
+
+def get_all_TMs() -> List[str]:
+    """Get all latest TMs."""
+    return ["TM0504", "TM0749"]
+
+
+def export_TM(tm: str, export_dir: Path):
+    """Export TM as submodules of `output_dir`."""
+    tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
+    subprocess.run(["git", "submodule", "add", tm_url], cwd=export_dir)
+
+
+def export_all_TMs(export_dir: Path):
+    """Export all latest TMs."""
+    print("[INFO] Exporting all TMs...")
+    for tm in get_all_TMs():
+        export_TM(tm, export_dir)
+
+    msg = "add latest TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    commit_and_push(export_dir, msg)
+    print("[INFO] Exporting all TMs done!")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("export_dir", type=Path, default=".")
+    args = parser.parse_args()
+
+    export_all_TMs(args.export_dir)
