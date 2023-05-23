@@ -106,9 +106,12 @@ def export_all_TMs(export_dir: Path):
     for tm in get_all_TMs():
         if not tm:
             continue
+        if export_dir.joinpath(tm).exists():
+            print(f"[INFO] {tm} already exists. Skipping...")
+            continue
         export_TM(tm, export_dir)
 
-    msg = "add latest TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    msg = "add TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     commit_and_push(export_dir, msg)
     print("[INFO] Exporting all TMs done!")
 
