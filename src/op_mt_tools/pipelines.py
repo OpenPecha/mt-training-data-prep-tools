@@ -45,13 +45,16 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
     github_org = os.environ["MAI_GITHUB_ORG"]
     local_text_repo_path = config.DATA_PATH / "texts" / text_id
     local_text_repo_path.mkdir(parents=True, exist_ok=True)
-    text_file_fn = download_first_text_file_from_github_repo(
-        repo_owner=github_org,
-        repo_name=text_id,
-        token=github_token,
-        output_path=local_text_repo_path,
-        prefix=config.CLEANDED_TEXT_PREFIX if text_id.startswith("EN") else "",
-    )
+    try:
+        text_file_fn = download_first_text_file_from_github_repo(
+            repo_owner=github_org,
+            repo_name=text_id,
+            token=github_token,
+            output_path=local_text_repo_path,
+            prefix=config.CLEANDED_TEXT_PREFIX if text_id.startswith("EN") else "",
+        )
+    except Exception:
+        text_file_fn = None
     text_file_exists = text_file_fn is not None
     return text_file_exists, local_text_repo_path
 
