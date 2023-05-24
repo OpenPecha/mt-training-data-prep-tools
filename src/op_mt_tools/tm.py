@@ -85,7 +85,7 @@ def create_TM(text_pair_view_path: Dict[t.LANG_CODE, Path], text_id: str) -> str
         return status
 
 
-def get_all_TMs() -> List[Optional[str]]:
+def get_all_TMs() -> Optional[List[str]]:
     """Get all latest TMs."""
     org = os.environ["MAI_GITHUB_ORG"]
     token = os.environ["GITHUB_TOKEN"]
@@ -99,11 +99,22 @@ def export_TM(tm: str, export_dir: Path):
     subprocess.run(["git", "submodule", "add", tm_url], cwd=export_dir)
 
 
-def export_all_TMs(export_dir: Path):
+def export_all_TMs(
+    export_dir: Path, text_ids: Optional[List[t.TEXT_ID_NO_PREFIX]] = None
+):
     """Export all latest TMs."""
     print("[INFO] Exporting all TMs...")
 
-    for tm in get_all_TMs():
+    if text_ids:
+        tms = [f"TM{text_id}" for text_id in text_ids] if text_ids else None
+    else:
+        tms = get_all_TMs()
+
+    if not tms:
+        print("[INFO] No TM found. Exiting...")
+        return
+
+    for tm in tms:
         if not tm:
             continue
         if export_dir.joinpath(tm).exists():
@@ -119,6 +130,11 @@ def export_all_TMs(export_dir: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("export_dir", type=Path, default=".")
+    parser.add_argument(
+        "--text_ids",
+        nargs="+",
+        help="add only these text",
+    )
     args = parser.parse_args()
 
-    export_all_TMs(args.export_dir)
+    export_all_TMs(args.export_dir, text_ids=args.text_ids)

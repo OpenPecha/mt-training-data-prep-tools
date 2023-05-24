@@ -93,7 +93,7 @@ def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Pat
 
 def get_github_repos_with_prefix(
     org: str, token: str, prefix: str
-) -> List[Optional[str]]:
+) -> Optional[List[str]]:
     """Search all repo with matching name of `name_or_prefix` in `org`."""
     ...
     url = f"https://api.github.com/search/repositories?q=user:{org}+{prefix}in:name&sort=stars&order=desc"
