@@ -1,6 +1,3 @@
+# OpenPecha MT Data Preparation Toolkit
 
-# Project name
-
-<!-- This is the project's homepage -->
-
-_Short conceptual overview_
+This repo contains tools for preparing data for machine translation. Tools includes text pair alignment, text cleanup, and translation memory export.
