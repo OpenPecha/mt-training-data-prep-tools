@@ -1,6 +1,6 @@
-
 - [Overview](README.md)
 - [Getting started](getting-started.md)
+- [Auto Alignment Pipeline](auto-alignment-pipeline.md)
 - [Reference](reference.md)
 - [Help](help.md)
 - [License](LICENSE.md)
