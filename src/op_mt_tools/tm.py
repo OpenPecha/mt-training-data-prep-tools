@@ -96,7 +96,7 @@ def get_all_TMs() -> Optional[List[str]]:
 def export_TM(tm: str, export_dir: Path):
     """Export TM as submodules of `output_dir`."""
     tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
-    subprocess.run(["git", "submodule", "add", tm_url], cwd=export_dir)
+    subprocess.run(["git", "submodule", "add", "-b", "main", tm_url], cwd=export_dir)
 
 
 def export_all_TMs(
@@ -134,6 +134,10 @@ if __name__ == "__main__":
         "--text_ids",
         nargs="+",
         help="add only these text",
+    )
+    parser.add_argument(
+        "--not-tm",
+        action="store_true",
     )
     args = parser.parse_args()
 
