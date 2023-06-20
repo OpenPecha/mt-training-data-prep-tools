@@ -45,6 +45,10 @@ class TMCatalogDB:
         if not self._exists(item.tm_id):
             self._db.insert(item.to_dict())
 
+    def get_items(self):
+        for item in self._db.all():
+            yield TMCatalogItem.from_dict(item)
+
 
 def read_csv(path):
     with open(path) as file:
@@ -154,33 +158,19 @@ class BOENCatalog:
             yield self._to_text_pair(row)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("enbo_path", help="path to enbo catalog csv file")
-    parser.add_argument("boen_path", help="path to boen catalog csv file")
-    parser.add_argument(
-        "--only_cleaned", help="only cleaned items", action="store_true"
-    )
-    parser.add_argument(
-        "--output_path",
-        help="path to output catalog json file",
-        default=catalog_csv_output_path,
-    )
+def run_import(args):
+    print(f"[INFO] Importing to TM Catalog at {args.catalog_path}")
 
-    args = parser.parse_args()
     enbo_catalog = ENBOCatalog(args.enbo_path)
     boen_catalog = BOENCatalog(args.boen_path)
-    catalog_db = TMCatalogDB(catalog_path)
+    catalog_db = TMCatalogDB(args.catalog_path)
 
-    if args.only_cleaned:
+    if args.cleaned:
         text_pairs = list(enbo_catalog.get_cleaned_items()) + list(
             boen_catalog.get_cleaned_items()
         )
-        print("cleaned", len(text_pairs))
     else:
         text_pairs = list(enbo_catalog.get_items()) + list(boen_catalog.get_items())
-        print("uncleaned", len(text_pairs))
-    tm_catalog_items = []
     for text_pair in text_pairs:
         tm_catalog_item = TMCatalogItem(
             tm_id=f"TM{text_pair.en_id[2:]}",
@@ -192,9 +182,60 @@ if __name__ == "__main__":
             bo_title=text_pair.bo_title,
             bo_repo_url=text_pair.bo_repo_url,
         )
-
-        tm_catalog_items.append(tm_catalog_item.to_dict())
         catalog_db.add_item(tm_catalog_item)
 
+    print(f"[INFO] Imported {len(text_pairs)} items")
+
+
+def run_export(args):
+    catalog_db = TMCatalogDB(args.catalog_path)
+    tm_catalog_items = [item.to_dict() for item in catalog_db.get_items()]
     tm_catalog_items.sort(key=lambda x: x["tm_id"])
     write_dict_to_csv(tm_catalog_items, args.output_path)
+    print("[INFO] TM catalog exported to", args.output_path)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Cli for managing translation memory catalog"
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    ###############
+    # Import Args #
+    ###############
+    import_ = subparsers.add_parser("import", help="import catalog from csv files")
+    import_.add_argument("enbo_path", help="path to enbo catalog csv file")
+    import_.add_argument("boen_path", help="path to boen catalog csv file")
+    import_.add_argument("--cleaned", help="only cleaned items", action="store_true")
+    import_.add_argument(
+        "--catalog_path",
+        help="path to catalog json file",
+        default=catalog_path,
+    )
+
+    ###############
+    # Export Args #
+    ###############
+    export = subparsers.add_parser("export", help="export catalog to csv file")
+    export.add_argument(
+        "--catalog_path",
+        help="path to catalog json file",
+        default=catalog_path,
+    )
+    export.add_argument(
+        "--output_path",
+        help="path to output catalog json file",
+        default=catalog_csv_output_path,
+    )
+
+    #################
+    # Validate Args #
+    #################
+    validate = subparsers.add_parser("check", help="check catalog for correctness")
+
+    args = parser.parse_args()
+    if args.command == "import":
+        run_import(args)
+    elif args.command == "export":
+        run_export(args)
