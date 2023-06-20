@@ -3,7 +3,7 @@ import csv
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-from tinydb import TinyDB
+from tinydb import Query, TinyDB
 
 from op_mt_tools import config
 
@@ -36,9 +36,14 @@ class TMCatalogDB:
     def __init__(self, db_path):
         self._db_path = db_path
         self._db = TinyDB(catalog_path)
+        self.tm_query = Query()
+
+    def _exists(self, tm_id):
+        return self._db.contains(self.tm_query.tm_id == tm_id)
 
     def add_item(self, item: TMCatalogItem):
-        self._db.insert(item.to_dict())
+        if not self._exists(item.tm_id):
+            self._db.insert(item.to_dict())
 
 
 def read_csv(path):
@@ -189,7 +194,7 @@ if __name__ == "__main__":
         )
 
         tm_catalog_items.append(tm_catalog_item.to_dict())
-        # catalog_db.add_item(tm_catalog_item)
+        catalog_db.add_item(tm_catalog_item)
 
     tm_catalog_items.sort(key=lambda x: x["tm_id"])
     write_dict_to_csv(tm_catalog_items, args.output_path)
