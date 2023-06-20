@@ -1,8 +1,10 @@
 import argparse
 import csv
+import os
 from dataclasses import asdict, dataclass
 from typing import Optional
 
+import requests
 from tinydb import Query, TinyDB
 
 from op_mt_tools import config
@@ -15,14 +17,17 @@ catalog_csv_output_path = config.ROOT_DIR / "data" / "catalog.csv"
 class TMCatalogItem:
     tm_id: str = ""
     direction: str = ""
+    created_at: Optional[str] = None
     en_id: str = ""
     en_title: str = ""
     en_repo_url: str = ""
     bo_id: str = ""
     bo_title: str = ""
     bo_repo_url: str = ""
+    manual_qced: bool = False
     oov_rate: Optional[float] = None
     qc_score: Optional[float] = None
+    cleaned: Optional[float] = None
 
     @classmethod
     def from_dict(cls, d):
@@ -44,9 +49,22 @@ class TMCatalogDB:
     def add_item(self, item: TMCatalogItem):
         if not self._exists(item.tm_id):
             self._db.insert(item.to_dict())
+        else:
+            self._db.update(item.to_dict(), self.tm_query.tm_id == item.tm_id)
+
+    def get_item(self, tm_id):
+        item = self._db.get(self.tm_query.tm_id == tm_id)
+        if item:
+            return TMCatalogItem.from_dict(item)
+        else:
+            return None
 
     def get_items(self):
         for item in self._db.all():
+            yield TMCatalogItem.from_dict(item)
+
+    def get_tm_created_items(self):
+        for item in self._db.search(self.tm_query.created_at):
             yield TMCatalogItem.from_dict(item)
 
 
@@ -64,6 +82,30 @@ def write_dict_to_csv(data, path):
         writer.writerows(data)
 
 
+def get_repo_created_at(org: str, repo: str):
+    print("called", repo)
+    url = f"https://api.github.com/repos/{org}/{repo}"
+    access_token = os.environ["GITHUB_TOKEN"]
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        repo_data = response.json()
+        created_at = repo_data["created_at"]
+        return created_at
+    else:
+        return None
+
+
+def get_tm_created_at(tm_id, bo_repo_url):
+    if not bo_repo_url:
+        return None
+    org = bo_repo_url.split("/")[3]
+    return get_repo_created_at(org, tm_id)
+
+
 @dataclass
 class TextPair:
     direction: str = ""
@@ -73,6 +115,7 @@ class TextPair:
     bo_id: str = ""
     bo_title: str = ""
     bo_repo_url: str = ""
+    cleaned: bool = False
 
     @classmethod
     def from_dict(cls, d):
@@ -97,9 +140,12 @@ class ENBOCatalog:
                 continue
             yield row
 
+    def _is_cleaned(self, row):
+        return row["Clean"] == "TRUE" and row["QCed"] == "✔"
+
     def get_cleaned_rows(self):
         for row in self.get_rows():
-            if row["Clean"] == "TRUE" and row["QCed"] == "✔":
+            if self._is_cleaned(row):
                 yield row
 
     def _to_text_pair(self, row):
@@ -111,6 +157,7 @@ class ENBOCatalog:
             bo_id=row["BO Repo"].strip(),
             bo_title=clean_title(row["བོད་མིང་། Tibetan Title"]),
             bo_repo_url=row["དྲ་ཐག Links (BO)"].strip(),
+            cleaned=self._is_cleaned(row),
         )
 
     def get_cleaned_items(self):
@@ -133,9 +180,12 @@ class BOENCatalog:
                 continue
             yield row
 
+    def is_cleaned(self, row):
+        return row["Done"] == "TRUE" and row["QCed"] == "✔"
+
     def get_cleaned_rows(self):
         for row in self.get_rows():
-            if row["Done"] == "TRUE" and row["QCed"] == "✔":
+            if self.is_cleaned(row):
                 yield row
 
     def _to_text_pair(self, row):
@@ -147,6 +197,7 @@ class BOENCatalog:
             bo_id=row["BO Repo"].strip(),
             bo_title=clean_title(row["Bo title-0"]),
             bo_repo_url=row["Link-0"].strip(),
+            cleaned=self.is_cleaned(row),
         )
 
     def get_cleaned_items(self):
@@ -172,8 +223,10 @@ def run_import(args):
     else:
         text_pairs = list(enbo_catalog.get_items()) + list(boen_catalog.get_items())
     for text_pair in text_pairs:
-        tm_catalog_item = TMCatalogItem(
-            tm_id=f"TM{text_pair.en_id[2:]}",
+        tm_id = f"TM{text_pair.en_id[2:]}"
+        tm_item = catalog_db.get_item(tm_id)
+        new_tm_item = TMCatalogItem(
+            tm_id=tm_id,
             direction=text_pair.direction,
             en_id=text_pair.en_id,
             en_title=text_pair.en_title,
@@ -182,14 +235,30 @@ def run_import(args):
             bo_title=text_pair.bo_title,
             bo_repo_url=text_pair.bo_repo_url,
         )
-        catalog_db.add_item(tm_catalog_item)
+
+        if not new_tm_item.en_repo_url or not new_tm_item.bo_repo_url:
+            catalog_db.add_item(new_tm_item)
+            continue
+
+        # reuse created_at if exists
+        if tm_item:
+            if not new_tm_item.created_at and tm_item.created_at:
+                new_tm_item.created_at = tm_item.created_at
+            else:
+                new_tm_item.created_at = get_tm_created_at(
+                    tm_id, new_tm_item.bo_repo_url
+                )
+        else:
+            new_tm_item.created_at = get_tm_created_at(tm_id, new_tm_item.bo_repo_url)
+
+        catalog_db.add_item(new_tm_item)
 
     print(f"[INFO] Imported {len(text_pairs)} items")
 
 
 def run_export(args):
     catalog_db = TMCatalogDB(args.catalog_path)
-    tm_catalog_items = [item.to_dict() for item in catalog_db.get_items()]
+    tm_catalog_items = [item.to_dict() for item in catalog_db.get_tm_created_items()]
     tm_catalog_items.sort(key=lambda x: x["tm_id"])
     write_dict_to_csv(tm_catalog_items, args.output_path)
     print("[INFO] TM catalog exported to", args.output_path)
@@ -213,6 +282,7 @@ if __name__ == "__main__":
         help="path to catalog json file",
         default=catalog_path,
     )
+    import_.add_argument("--update", help="update existing items", action="store_true")
 
     ###############
     # Export Args #
