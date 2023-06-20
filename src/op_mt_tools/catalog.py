@@ -1,6 +1,7 @@
 import argparse
 import csv
 from dataclasses import asdict, dataclass
+from typing import Optional
 
 from tinydb import TinyDB
 
@@ -20,8 +21,8 @@ class TMCatalogItem:
     bo_id: str = ""
     bo_title: str = ""
     bo_repo_url: str = ""
-    oov_rate: float = 0.0
-    qc_score: float = 0.0
+    oov_rate: Optional[float] = None
+    qc_score: Optional[float] = None
 
     @classmethod
     def from_dict(cls, d):
@@ -72,6 +73,10 @@ class TextPair:
         return asdict(self)
 
 
+def clean_title(title):
+    return title.strip().replace("\t", " ").replace("\n", "")
+
+
 class ENBOCatalog:
     def __init__(self, path):
         self._path = path
@@ -92,10 +97,10 @@ class ENBOCatalog:
         return TextPair(
             direction=self.direction,
             en_id=row["EN Repo"].strip(),
-            en_title=row["དབྱིན་མིང་། English Title"].strip(),
+            en_title=clean_title(row["དབྱིན་མིང་། English Title"]),
             en_repo_url=row["དྲ་ཐག Links (EN)"].strip(),
             bo_id=row["BO Repo"].strip(),
-            bo_title=row["བོད་མིང་། Tibetan Title"].strip(),
+            bo_title=clean_title(row["བོད་མིང་། Tibetan Title"]),
             bo_repo_url=row["དྲ་ཐག Links (BO)"].strip(),
         )
 
@@ -128,10 +133,10 @@ class BOENCatalog:
         return TextPair(
             direction=self.direction,
             en_id=row["EN Repo"].strip(),
-            en_title=row["Tittle"].strip(),
+            en_title=clean_title(row["Tittle"]),
             en_repo_url=row["Link"].strip(),
             bo_id=row["BO Repo"].strip(),
-            bo_title=row["Bo title-0"].strip(),
+            bo_title=clean_title(row["Bo title-0"]),
             bo_repo_url=row["Link-0"].strip(),
         )
 
@@ -163,14 +168,15 @@ if __name__ == "__main__":
     catalog_db = TMCatalogDB(catalog_path)
 
     if args.only_cleaned:
-        texts_pairs = list(enbo_catalog.get_cleaned_items()) + list(
+        text_pairs = list(enbo_catalog.get_cleaned_items()) + list(
             boen_catalog.get_cleaned_items()
         )
+        print("cleaned", len(text_pairs))
     else:
-        print("no cleaned")
-        texts_pairs = list(enbo_catalog.get_items()) + list(boen_catalog.get_items())
+        text_pairs = list(enbo_catalog.get_items()) + list(boen_catalog.get_items())
+        print("uncleaned", len(text_pairs))
     tm_catalog_items = []
-    for text_pair in enbo_catalog.get_cleaned_items():
+    for text_pair in text_pairs:
         tm_catalog_item = TMCatalogItem(
             tm_id=f"TM{text_pair.en_id[2:]}",
             direction=text_pair.direction,
@@ -185,4 +191,5 @@ if __name__ == "__main__":
         tm_catalog_items.append(tm_catalog_item.to_dict())
         # catalog_db.add_item(tm_catalog_item)
 
+    tm_catalog_items.sort(key=lambda x: x["tm_id"])
     write_dict_to_csv(tm_catalog_items, args.output_path)
