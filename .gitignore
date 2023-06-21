@@ -130,3 +130,4 @@ dmypy.json
 */manual
 playground
 data
+.DS_Store

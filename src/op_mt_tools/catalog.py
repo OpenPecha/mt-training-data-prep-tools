@@ -9,10 +9,8 @@ from tinydb import Query, TinyDB
 
 from op_mt_tools import config
 
-catalog_path = config.ROOT_DIR / "data" / "catalog.json"
-catalog_csv_output_path = (
-    config.ROOT_DIR / "data" / "MonlamAI_catalog" / "tm_catalog.csv"
-)
+catalog_path = config.ROOT_DIR / "data" / "MonlamAI_catalog" / "tm_catalog.json"
+catalog_csv_output_path = config.ROOT_DIR / "data" / "tm_catalog.csv"
 
 
 @dataclass
@@ -26,7 +24,6 @@ class TMCatalogItem:
     bo_id: str = ""
     bo_title: str = ""
     bo_repo_url: str = ""
-    manual_qced: bool = False
     oov_rate: Optional[float] = None
     qc_score: Optional[float] = None
     cleaned: Optional[float] = None
@@ -66,7 +63,7 @@ class TMCatalogDB:
             yield TMCatalogItem.from_dict(item)
 
     def get_tm_created_items(self):
-        for item in self._db.search(self.tm_query.created_at):
+        for item in self._db.search(self.tm_query.created_at.exists()):
             yield TMCatalogItem.from_dict(item)
 
 
@@ -315,7 +312,11 @@ def run_import_lh_tms(args):
 
 def run_export(args):
     catalog_db = TMCatalogDB(args.catalog_path)
-    tm_catalog_items = [item.to_dict() for item in catalog_db.get_tm_created_items()]
+    tm_catalog_items = [
+        item.to_dict()
+        for item in catalog_db.get_tm_created_items()
+        if args.filter in item.tm_id
+    ]
     tm_catalog_items.sort(key=lambda x: x["tm_id"])
     write_dict_to_csv(tm_catalog_items, args.output_path)
     print("[INFO] TM catalog exported to", args.output_path)
@@ -375,6 +376,11 @@ if __name__ == "__main__":
         "--output_path",
         help="path to output catalog json file",
         default=catalog_csv_output_path,
+    )
+    export.add_argument(
+        "--filter",
+        help="filter by TM id",
+        default="",
     )
 
     #################
