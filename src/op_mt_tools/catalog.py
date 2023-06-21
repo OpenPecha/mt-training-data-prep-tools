@@ -10,7 +10,9 @@ from tinydb import Query, TinyDB
 from op_mt_tools import config
 
 catalog_path = config.ROOT_DIR / "data" / "catalog.json"
-catalog_csv_output_path = config.ROOT_DIR / "data" / "catalog.csv"
+catalog_csv_output_path = (
+    config.ROOT_DIR / "data" / "MonlamAI_catalog" / "tm_catalog.csv"
+)
 
 
 @dataclass
@@ -209,7 +211,32 @@ class BOENCatalog:
             yield self._to_text_pair(row)
 
 
-def run_import(args):
+class LHCatalog:
+    """Catalog for Lotsawa House TMs"""
+
+    def __init__(self, path):
+        self._path = path
+        self.direction = "boen"
+
+    def _to_text_pair(self, row):
+        bo_repo_url = "https://github.com/MonlamAI/bo-en"
+        return TextPair(
+            direction=self.direction,
+            en_id=f"EN{row['tm_id'][2:]}",
+            en_title=clean_title(row["en_title"]),
+            bo_id=f"BO{row['tm_id'][2:]}",
+            bo_title=clean_title(row["bo_title"]),
+            bo_repo_url=bo_repo_url,
+            cleaned=True,
+        )
+
+    def get_items(self):
+        for row in read_csv(self._path):
+            yield self._to_text_pair(row)
+
+
+def run_import_trans_catalog(args):
+    """Import translation catalog to TM Catalog"""
     print(f"[INFO] Importing to TM Catalog at {args.catalog_path}")
 
     enbo_catalog = ENBOCatalog(args.enbo_path)
@@ -256,6 +283,36 @@ def run_import(args):
     print(f"[INFO] Imported {len(text_pairs)} items")
 
 
+def run_import_lh_tms(args):
+    print("[INFO] Importing Lotsawa House TMs...")
+    lh_tms_catalog = LHCatalog(args.csv_path)
+    catalog_db = TMCatalogDB(args.catalog_path)
+    count = 0
+    for text_pair in lh_tms_catalog.get_items():
+        tm_id = f"TM{text_pair.en_id[2:]}"
+        tm_item = catalog_db.get_item(tm_id)
+        new_tm_item = TMCatalogItem(
+            tm_id=tm_id,
+            direction=text_pair.direction,
+            en_title=text_pair.en_title,
+            bo_title=text_pair.bo_title,
+            cleaned=text_pair.cleaned,
+        )
+
+        if tm_item:
+            if not new_tm_item.created_at and tm_item.created_at:
+                new_tm_item.created_at = tm_item.created_at
+            else:
+                new_tm_item.created_at = get_tm_created_at(
+                    tm_id, new_tm_item.bo_repo_url
+                )
+
+        catalog_db.add_item(new_tm_item)
+        count += 1
+
+    print(f"[INFO] Imported {count} items")
+
+
 def run_export(args):
     catalog_db = TMCatalogDB(args.catalog_path)
     tm_catalog_items = [item.to_dict() for item in catalog_db.get_tm_created_items()]
@@ -270,19 +327,40 @@ if __name__ == "__main__":
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    ###############
-    # Import Args #
-    ###############
-    import_ = subparsers.add_parser("import", help="import catalog from csv files")
-    import_.add_argument("enbo_path", help="path to enbo catalog csv file")
-    import_.add_argument("boen_path", help="path to boen catalog csv file")
-    import_.add_argument("--cleaned", help="only cleaned items", action="store_true")
-    import_.add_argument(
+    ###################################
+    # Import Translation Catalog Args #
+    ###################################
+    import_trans_catalog = subparsers.add_parser(
+        "import_trans_catalog", help="import catalog from csv files"
+    )
+    import_trans_catalog.add_argument("enbo_path", help="path to enbo catalog csv file")
+    import_trans_catalog.add_argument("boen_path", help="path to boen catalog csv file")
+    import_trans_catalog.add_argument(
+        "--cleaned", help="only cleaned items", action="store_true"
+    )
+    import_trans_catalog.add_argument(
         "--catalog_path",
         help="path to catalog json file",
         default=catalog_path,
     )
-    import_.add_argument("--update", help="update existing items", action="store_true")
+    import_trans_catalog.add_argument(
+        "--update", help="update existing items", action="store_true"
+    )
+
+    #########################################
+    # Import Lotsawa House TMs Catalog Args #
+    #########################################
+    import_trans_catalog = subparsers.add_parser(
+        "import_lh_tms", help="import catalog from csv files"
+    )
+    import_trans_catalog.add_argument(
+        "csv_path", help="path to lh tms catalog csv file"
+    )
+    import_trans_catalog.add_argument(
+        "--catalog_path",
+        help="path to catalog json file",
+        default=catalog_path,
+    )
 
     ###############
     # Export Args #
@@ -305,7 +383,9 @@ if __name__ == "__main__":
     validate = subparsers.add_parser("check", help="check catalog for correctness")
 
     args = parser.parse_args()
-    if args.command == "import":
-        run_import(args)
+    if args.command == "import_trans_catalog":
+        run_import_trans_catalog(args)
+    elif args.command == "import_lh_tms":
+        run_import_lh_tms(args)
     elif args.command == "export":
         run_export(args)
