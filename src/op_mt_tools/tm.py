@@ -93,34 +93,36 @@ def get_all_TMs() -> Optional[List[str]]:
     return repos
 
 
-def export_TM(tm: str, export_dir: Path):
+def export_TM(tm: str, export_dir: Path, branch):
     """Export TM as submodules of `output_dir`."""
     tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
-    subprocess.run(["git", "submodule", "add", "-b", "main", tm_url], cwd=export_dir)
+    subprocess.run(
+        ["git", "submodule", "add", "-b", branch, "--force", tm_url], cwd=export_dir
+    )
 
 
 def export_all_TMs(
-    export_dir: Path, text_ids: Optional[List[t.TEXT_ID_NO_PREFIX]] = None
+    export_dir: Path,
+    tm_ids: Optional[List[t.TEXT_ID]] = None,
+    branch: str = "main",
 ):
     """Export all latest TMs."""
     print("[INFO] Exporting all TMs...")
 
-    if text_ids:
-        tms = [f"TM{text_id}" for text_id in text_ids] if text_ids else None
-    else:
-        tms = get_all_TMs()
+    if not tm_ids:
+        tm_ids = get_all_TMs()
 
-    if not tms:
+    if not tm_ids:
         print("[INFO] No TM found. Exiting...")
         return
 
-    for tm in tms:
-        if not tm:
+    for tm_id in tm_ids:
+        if not tm_id:
             continue
-        if export_dir.joinpath(tm).exists():
-            print(f"[INFO] {tm} already exists. Skipping...")
+        if export_dir.joinpath(tm_id).exists():
+            print(f"[INFO] {tm_id} already exists. Skipping...")
             continue
-        export_TM(tm, export_dir)
+        export_TM(tm_id, export_dir, branch)
 
     msg = "add TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     commit_and_push(export_dir, msg)
@@ -131,9 +133,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("export_dir", type=Path, default=".")
     parser.add_argument(
-        "--text_ids",
+        "--tm_ids",
         nargs="+",
         help="add only these text",
+    )
+    parser.add_argument(
+        "--branch",
+        default="main",
+        help="default branch of the TM repo",
     )
     parser.add_argument(
         "--not-tm",
@@ -141,4 +148,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    export_all_TMs(args.export_dir, text_ids=args.text_ids)
+    export_all_TMs(args.export_dir, tm_ids=args.tm_ids, branch=args.branch)
