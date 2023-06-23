@@ -26,7 +26,7 @@ class TMCatalogItem:
     bo_repo_url: str = ""
     oov_rate: Optional[float] = None
     qc_score: Optional[float] = None
-    cleaned: Optional[float] = None
+    cleaned: float = False
 
     @classmethod
     def from_dict(cls, d):
@@ -322,6 +322,56 @@ def run_export(args):
     print("[INFO] TM catalog exported to", args.output_path)
 
 
+def run_search(args):
+    def parse_query(raw_query):
+        query = {}
+        for item in raw_query.split():
+            key, value = item.split(":")
+            if value in ["True", "true"]:
+                value = True
+            elif value in ["False", "false"]:
+                value = False
+            query[key] = value
+        return query
+
+    def matched(raw_query, item):
+        # match only when all query is matched
+        attr_matched_count = 0
+        query = parse_query(raw_query)
+        for k, v in query.items():
+            if isinstance(v, bool):
+                if item[k]:
+                    print(k, v, item[k])
+                if v == item[k]:
+                    attr_matched_count += 1
+            else:
+                if v == "has":
+                    if item[k]:
+                        attr_matched_count += 1
+                elif v == "no":
+                    if not item[k]:
+                        attr_matched_count += 1
+                else:
+                    if v in item[k]:
+                        attr_matched_count += 1
+
+        return len(query) == attr_matched_count
+
+    print(f"[INFO] Searching catalog with query {args.query}...")
+    catalog_db = TMCatalogDB(args.catalog_path)
+    for item in catalog_db.get_items():
+        if item.tm_id.endswith("_LH"):
+            continue
+        try:
+            if matched(args.query, item.to_dict()):
+                print(item.tm_id, item.created_at, item.cleaned)
+        except Exception as e:
+            print(item)
+            raise e
+
+    print("[INFO] Search completed!")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Cli for managing translation memory catalog"
@@ -388,6 +438,19 @@ if __name__ == "__main__":
     #################
     validate = subparsers.add_parser("check", help="check catalog for correctness")
 
+    ##########
+    # Search #
+    ##########
+    search = subparsers.add_parser("search", help="search catalog")
+    search.add_argument(
+        "query", help="search query, syntax is <column>:<value> <column>:<value> ..."
+    )
+    search.add_argument(
+        "--catalog_path",
+        help="path to catalog json file",
+        default=catalog_path,
+    )
+
     args = parser.parse_args()
     if args.command == "import_trans_catalog":
         run_import_trans_catalog(args)
@@ -395,3 +458,5 @@ if __name__ == "__main__":
         run_import_lh_tms(args)
     elif args.command == "export":
         run_export(args)
+    elif args.command == "search":
+        run_search(args)
