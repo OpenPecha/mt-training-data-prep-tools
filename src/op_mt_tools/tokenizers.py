@@ -51,6 +51,29 @@ def bo_preprocess(text: str) -> str:
     return text
 
 
+def fix_splited_affix(text):
+    patterns = [
+        r"(?<=པ)་(?=འི་)",
+        r"(?<=པེ)་(?=འི་)",
+        r"(?<=པོ)་(?=འི་)",
+        r"(?<=བ)་(?=འི་)",
+        r"(?<=བེ)་(?=འི་)",
+        r"(?<=བོ)་(?=འི་)",
+        r"(?<=བུ)་(?=འི་)",
+    ]
+
+    for pattern in patterns:
+        text = re.sub(pattern, "", text)
+
+    return text
+
+
+def find_splited_affix(text):
+    pattern = r"་(པ་|པེ་|པོ་|བ་|བེ་|བོ་|བུ་)འི་"
+    matches = re.findall(pattern, text)
+    return matches
+
+
 def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
 
@@ -98,6 +121,9 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
 
     for fr, to in r_replace:
         sents_text = re.sub(fr, to, sents_text)
+
+    if find_splited_affix(sents_text):
+        sents_text = fix_splited_affix(sents_text)
 
     return sents_text
 

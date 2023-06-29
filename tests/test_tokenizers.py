@@ -1,9 +1,13 @@
+import pytest
+
 from op_mt_tools.tokenizers import (
     bo_preprocess,
     bo_sent_tokenizer,
     en_preprocess,
     en_sent_tokenizer,
     en_word_tokenizer,
+    find_splited_affix,
+    fix_splited_affix,
 )
 
 
@@ -56,3 +60,33 @@ def test_bo_sent_tokenizer_affix():
     sents = bo_sent_tokenizer(text)
 
     assert len(sents.splitlines()) == 1
+
+
+def test_find_splited_affix():
+    s = [
+        "་དད་པ་འི་",
+        "་དད་པེ་འི་",
+        "་དད་པོ་འི་",
+        "གྱུར་བ་འི་",
+        "གྱུར་བེ་འི་",
+        "གྱུར་བུ་འི་",
+        "གྱུར་བོ་འི་",
+    ]
+    for i in s:
+        assert find_splited_affix(i)
+
+
+@pytest.mark.parametrize(
+    "input_text, expected_output",
+    [
+        ("དད་པ་འི་", "དད་པའི་"),
+        ("དད་པེ་འི་", "དད་པེའི་"),
+        ("དད་པོ་འི་", "དད་པོའི་"),
+        ("གྱུར་བ་འི་", "གྱུར་བའི་"),
+        ("གྱུར་བེ་འི་", "གྱུར་བེའི་"),
+        ("གྱུར་བུ་འི་", "གྱུར་བུའི་"),
+        ("གྱུར་བོ་འི་", "གྱུར་བོའི་"),
+    ],
+)
+def test_remove_preceding_space(input_text, expected_output):
+    assert fix_splited_affix(input_text) == expected_output
