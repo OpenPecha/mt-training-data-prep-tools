@@ -48,3 +48,11 @@ def test_bo_sent_tokenizer_2():
     sents = bo_sent_tokenizer(text)
 
     assert len(sents.splitlines()) == 3
+
+
+def test_bo_sent_tokenizer_affix():
+    text = "ཨ་རིའི་ས་ཞེས་པས་བཤད་པ་ལྟར་ན།"
+
+    sents = bo_sent_tokenizer(text)
+
+    assert len(sents.splitlines()) == 1

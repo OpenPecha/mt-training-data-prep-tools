@@ -78,6 +78,7 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
             r"\1\2 ",
         ),  # Samdong Rinpoche style double shad. This needs to be applied on inference input
         # (r"", r""),
+        (r"་([པབ])་འི་", r"་\1འི་"),
     ]
 
     text = bo_preprocess(text)
