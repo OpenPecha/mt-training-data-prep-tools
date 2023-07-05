@@ -52,10 +52,14 @@ def test_bo_sent_tokenizer_2():
     sents = bo_sent_tokenizer(text)
 
     assert len(sents.splitlines()) == 3
+    assert (
+        sents
+        == "༄༅།། རྗེ་བཙུན་མི་ལ་རས་པའི་རྣམ་ཐར་རྒྱས་པར་ཕྱེ་བ་མགུར་འབུམ་ཞེས་བྱ་བ་བཞུགས་སོ།།\n༄༅༅།། ན་མོ་གུ་རུ།\nརྣལ་འབྱོར་གྱི་དབང་ཕྱུག་རྗེ་བཙུན་མི་ལ་རས་པ་དེ་ཉིད།"  # noqa
+    )
 
 
 def test_bo_sent_tokenizer_affix():
-    text = "ཨ་རིའི་ས་ཞེས་པས་བཤད་པ་ལྟར་ན།"
+    text = "ཞེས་པས་"
 
     sents = bo_sent_tokenizer(text)
 

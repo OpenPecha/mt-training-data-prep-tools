@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Tuple
 
 import botok
 from spacy.lang.en import English
@@ -9,7 +9,10 @@ en_nlp = English()
 en_nlp.add_pipe("sentencizer")
 en_nlp.max_length = 5000000
 
+# Types
 SENT_PER_LINE_STR = str  # sentence per line string
+IS_PUNCT = bool
+SENTS_WORDS = List[Tuple[str, IS_PUNCT]]
 
 
 def get_bo_word_tokenizer():
@@ -83,6 +86,30 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
         else:
             return token.text
 
+    def is_affix_punct(token):
+        affix_puncts = ["ར་", "ས་", "འི་"]
+        text = get_token_text(token)
+        if text in affix_puncts and token.pos == "PUNCT":
+            return True
+        else:
+            return False
+
+    def merge_affix_puncts(sents_words: SENTS_WORDS) -> List[str]:
+        merged_affix_words: List[str] = []
+        for i in range(len(sents_words)):
+            word, is_punct = sents_words[i]
+            if is_punct:
+                if i > 0:
+                    prev_word, prev_is_punct = sents_words[i - 1]
+                    if prev_is_punct:
+                        merged_affix_words[-1] = (
+                            prev_word[:-1] + word
+                        )  # remove last tsek of prev_word and add punct(word)
+                        continue
+            else:
+                merged_affix_words.append(word)
+        return merged_affix_words
+
     # fmt: off
     opening_puncts = ['༁', '༂', '༃', '༄', '༅', '༆', '༇', '༈', '༉', '༊', '༑', '༒', '༺', '༼', '༿', '࿐', '࿑', '࿓', '࿔', '࿙']  # noqa: E501
     closing_puncts = ['།', '༎', '༏', '༐', '༔', '༴', '༻', '༽', '༾', '࿚']  # noqa: E501
@@ -101,11 +128,10 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
             r"\1\2 ",
         ),  # Samdong Rinpoche style double shad. This needs to be applied on inference input
         # (r"", r""),
-        (r"་([པབ])་འི་", r"་\1འི་"),
     ]
 
     text = bo_preprocess(text)
-    sents_text = ""
+    sents_words: SENTS_WORDS = []
     tokenizer = get_bo_word_tokenizer()
     tokens = tokenizer.tokenize(text)
     for token in tokens:
@@ -113,11 +139,14 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
             continue
         token_text = get_token_text(token)
         if any(punct in token_text for punct in opening_puncts):
-            sents_text += token_text.strip()
+            sents_words.append((token_text.strip(), is_affix_punct(token)))
         elif any(punct in token_text for punct in closing_puncts):
-            sents_text += token_text.strip() + "\n"
+            sents_words.append((token_text.strip(), is_affix_punct(token)))
+            sents_words.append(("\n", False))
         else:
-            sents_text += token_text
+            sents_words.append((token_text, is_affix_punct(token)))
+
+    sents_text = "".join(merge_affix_puncts(sents_words))
 
     for fr, to in r_replace:
         sents_text = re.sub(fr, to, sents_text)
