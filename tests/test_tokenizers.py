@@ -45,13 +45,17 @@ def test_bo_preprocess():
 def test_bo_sent_tokenizer_2():
     text = """
     TibetanBuddhistResourceCenterTextScan Input
-    ༄༅། །རྗེ་བཙུན་མི་ལ་རས་པའི་རྣམ་ཐར་རྒྱས་པར་ཕྱེ་བ་མགུར་འབུམ་ཞེས་བྱ་བ་བཞུགས་སོ། །
-    EMILY༄༅༅། །ན་མོ་གུ་རུ། རྣལ་འབྱོར་གྱི་དབང་ཕྱུག་རྗེ་(“”)བཙུན་མི་ལ་རས་པ་དེ་ཉིད།
+    ༄༅། །ཞོགས་པ་སྔ་པོར་ལངས་པ། །
+    EMILY༄༅༅། །ན་མོ་གུ་རུ། དེའི་(“”)རྐྱེན་པས་མཐའ་མར་གྲོགས་པོ་
     """
 
     sents = bo_sent_tokenizer(text)
 
     assert len(sents.splitlines()) == 3
+    assert (
+        sents
+        == "༄༅།། ཞོགས་པ་སྔ་པོར་ལངས་པ།། \n༄༅༅།། ན་མོ་གུ་རུ།\nདེའི་རྐྱེན་པས་མཐའ་མར་གྲོགས་པོ་\n"
+    )
 
 
 def test_bo_sent_tokenizer_affix():
