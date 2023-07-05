@@ -11,8 +11,8 @@ en_nlp.max_length = 5000000
 
 # Types
 SENT_PER_LINE_STR = str  # sentence per line string
-IS_PUNCT = bool
-SENTS_WORDS = List[Tuple[str, IS_PUNCT]]
+IS_AFFIX_PART = bool
+SENTS_WORDS = List[Tuple[str, IS_AFFIX_PART]]
 
 
 def get_bo_word_tokenizer():
@@ -54,29 +54,6 @@ def bo_preprocess(text: str) -> str:
     return text
 
 
-def fix_splited_affix(text):
-    patterns = [
-        r"(?<=པ)་(?=འི་)",
-        r"(?<=པེ)་(?=འི་)",
-        r"(?<=པོ)་(?=འི་)",
-        r"(?<=བ)་(?=འི་)",
-        r"(?<=བེ)་(?=འི་)",
-        r"(?<=བོ)་(?=འི་)",
-        r"(?<=བུ)་(?=འི་)",
-    ]
-
-    for pattern in patterns:
-        text = re.sub(pattern, "", text)
-
-    return text
-
-
-def find_splited_affix(text):
-    pattern = r"་(པ་|པེ་|པོ་|བ་|བེ་|བོ་|བུ་)འི་"
-    matches = re.findall(pattern, text)
-    return matches
-
-
 def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     """Tokenize a text into sentences."""
 
@@ -86,26 +63,25 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
         else:
             return token.text
 
-    def is_affix_punct(token):
-        affix_puncts = ["ར་", "ས་", "འི་"]
+    def is_affix_part(token):
+        affix_parts = ["ར་", "ས་", "འི་"]
         text = get_token_text(token)
-        if text in affix_puncts and token.pos == "PUNCT":
+        if text in affix_parts and token.pos == "PART":
             return True
         else:
             return False
 
-    def merge_affix_puncts(sents_words: SENTS_WORDS) -> List[str]:
+    def merge_affix_part(sents_words: SENTS_WORDS) -> List[str]:
         merged_affix_words: List[str] = []
         for i in range(len(sents_words)):
-            word, is_punct = sents_words[i]
-            if is_punct:
-                if i > 0:
-                    prev_word, prev_is_punct = sents_words[i - 1]
-                    if prev_is_punct:
-                        merged_affix_words[-1] = (
-                            prev_word[:-1] + word
-                        )  # remove last tsek of prev_word and add punct(word)
-                        continue
+            word, is_affix_part = sents_words[i]
+            if is_affix_part:
+                prev_word, _ = sents_words[i - 1]
+                if prev_word[-1] == "་":
+                    prev_word = prev_word[:-1]
+                merged_affix_words[-1] = (
+                    prev_word + word
+                )  # remove last tsek of prev_word and add punct(word)
             else:
                 merged_affix_words.append(word)
         return merged_affix_words
@@ -139,20 +115,17 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
             continue
         token_text = get_token_text(token)
         if any(punct in token_text for punct in opening_puncts):
-            sents_words.append((token_text.strip(), is_affix_punct(token)))
+            sents_words.append((token_text.strip(), False))
         elif any(punct in token_text for punct in closing_puncts):
-            sents_words.append((token_text.strip(), is_affix_punct(token)))
+            sents_words.append((token_text.strip(), False))
             sents_words.append(("\n", False))
         else:
-            sents_words.append((token_text, is_affix_punct(token)))
+            sents_words.append((token_text, is_affix_part(token)))
 
-    sents_text = "".join(merge_affix_puncts(sents_words))
+    sents_text = "".join(merge_affix_part(sents_words))
 
     for fr, to in r_replace:
         sents_text = re.sub(fr, to, sents_text)
-
-    if find_splited_affix(sents_text):
-        sents_text = fix_splited_affix(sents_text)
 
     return sents_text
 
