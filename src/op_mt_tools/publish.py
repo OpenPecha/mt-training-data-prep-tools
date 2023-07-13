@@ -1,37 +1,47 @@
 import argparse
 import datetime
 import os
+import random
+import string
 import subprocess
 
 
 def update_submodules(repo_path):
     # Update submodules
     os.chdir(repo_path)
-    subprocess.run(["git", "submodule", "update", "--init", "--recursive"])
+    subprocess.run(["git", "pull"])
+    subprocess.run(["git", "submodule", "update", "--init", "--remote", "--recursive"])
 
 
-def create_release(current_date):
+def commit_and_push_changes(repo_path):
+    # Commit and push submodule changes
+    os.chdir(repo_path)
+    subprocess.run(["git", "commit", "-am", "Update TMs"])
+    subprocess.run(["git", "push"])
+
+
+def create_release(version):
     # Create new release with tag of current date
-    release_title = f"Release {current_date}"
+    release_title = f"Release {version}"
     subprocess.run(
         [
             "gh",
             "release",
             "create",
-            current_date,
+            f"{version}",
             "--title",
             release_title,
             "--notes",
-            "Automatic release created by script",
+            f"Please provide your feekback on this new release in the issue titled `{version} Feedback`",  # noqa
         ]
     )
 
 
-def open_feedback_issue(current_date):
+def open_feedback_issue(version):
     # Open issue for users
-    issue_title = f"Feedback for Release {current_date}"
-    issue_body = "Please provide your feedback on the latest release. We would love to hear from you!"
-    result = subprocess.run(
+    issue_title = f"{version} Feedback"
+    issue_body = f"Please provide your feedback on the release {version}. We would love to hear from you!"
+    subprocess.run(
         [
             "gh",
             "issue",
@@ -40,35 +50,18 @@ def open_feedback_issue(current_date):
             issue_title,
             "--body",
             issue_body,
-            "--json",
-            "number",
+            "--label",
+            "feedback",
         ],
-        capture_output=True,
-        text=True,
     )
-    issue_number = result.stdout.strip()
 
-    # Get release ID
-    result = subprocess.run(
-        ["gh", "release", "view", current_date, "--json", "id"],
-        capture_output=True,
-        text=True,
-    )
-    release_id = result.stdout.strip()
 
-    # Link the issue in the release description
-    result = subprocess.run(
-        [
-            "gh",
-            "release",
-            "edit",
-            release_id,
-            "--notes",
-            f"$(gh release view {current_date} --json body --jq '.body' | sed 's/\"/\\\\\"/g')\\n\\nRelated: #{issue_number}'",  # noqa
-        ],
-        capture_output=True,
-        text=True,
-    )
+def generate_release_tag():
+    # Generate release tag with random two-character alphabets
+    current_date = datetime.date.today().strftime("%d.%m.%Y")
+    random_chars = "".join(random.choices(string.ascii_lowercase, k=2))
+    release_tag = f"{current_date}-{random_chars}"
+    return release_tag
 
 
 def main():
@@ -83,12 +76,13 @@ def main():
 
     # Update submodules
     update_submodules(args.repo_path)
+    commit_and_push_changes(args.repo_path)
 
     # Create new release or skip if specified
     if not args.no_release:
-        current_date = datetime.date.today().strftime("%d.%m.%Y")
-        create_release(current_date)
-        open_feedback_issue(current_date)
+        release_tag = generate_release_tag()
+        create_release(release_tag)
+        open_feedback_issue(release_tag)
 
 
 if __name__ == "__main__":
