@@ -1,6 +1,9 @@
+import pytest
+
 from op_mt_tools.github_utils import get_github_repos_with_prefix
 
 
+@pytest.mark.skip(reason="Calling external API")
 def test_get_github_repos_with_prefix():
     import os
 
