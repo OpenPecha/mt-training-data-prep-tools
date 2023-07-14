@@ -23,6 +23,8 @@ None
 
 ## Docs
 
+https://dev.openpecha.org/mt-training-data-prep-tools
+
 ### Requirements
 
 #### Environments vars
