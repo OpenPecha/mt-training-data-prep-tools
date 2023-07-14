@@ -9,16 +9,25 @@
 1. Set text list as input (shown in the image below)
    <img width="1255" alt="run_aligner_input" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/9fea13e8-1c83-446f-a96d-cd92fbbaf9f9">
 1. Run Alinger (shown in the image below)
-   <img width="1432" alt="Screenshot 2023-05-29 at 4 16 15 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/0c3f61b7-7fca-4e8f-b4c7-281d8a0b95c2">
+   <img width="1762" alt="Run Aligner" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/b5a1170c-8229-487b-9c90-62447fac7038">
 1. Check log if the aligner running properly (shown in the image below)
    <img width="1467" alt="Screenshot 2023-05-29 at 4 24 05 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/e46df67e-3f2f-4084-a7fa-8de8701474d7">
 
 ## Export TMs
 
-## 2. Start Aligner
+1. clone this repo https://github.com/MonlamAI/MonlamAI_TMs
+2. Store all TMs ids in a file `text_pairs_list.txt`. (shown in the example below)
 
-2. Start the Aligner
+(content of `text_pairs_list.txt`)
 
-- check if the aligner is running [here](https://huggingface.co/spaces/openpecha/tibetan-aligner-api)
+```txt
+0504 0702 0709 0710 0723 0725 0726 0728 0746 0747 0751
+```
 
-3. Run Aligner
+3. Run the follwing command to export
+
+```bash
+python -m op_mt_tools.tm <path_to_MonlamAI_TMs_repo> --text_id $(cat text_pairs_list.txt)
+```
+
+## Publishing TMs as training data
