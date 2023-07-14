@@ -9,19 +9,23 @@ import subprocess
 def update_submodules(repo_path):
     # Update submodules
     os.chdir(repo_path)
+    print("[INFO] Pulling latest changes...")
     subprocess.run(["git", "pull"])
+    print("[INFO] Updating TMs...")
     subprocess.run(["git", "submodule", "update", "--init", "--remote", "--recursive"])
 
 
 def commit_and_push_changes(repo_path):
     # Commit and push submodule changes
     os.chdir(repo_path)
+    print("[INFO] Committing and pushing changes...")
     subprocess.run(["git", "commit", "-am", "Update TMs"])
     subprocess.run(["git", "push"])
 
 
 def create_release(version):
     # Create new release with tag of current date
+    print("[INFO] Creating new release...")
     release_title = f"Release {version}"
     subprocess.run(
         [
