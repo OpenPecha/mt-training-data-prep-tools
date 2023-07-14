@@ -31,6 +31,6 @@ python -m op_mt_tools.cli.cleanup_en batch_cleanup $(cat input.txt)
 - Set input:
   <img width="1255" alt="run_aligner_input" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/9fea13e8-1c83-446f-a96d-cd92fbbaf9f9">
 - Run Alinger
-  <img width="1432" alt="Screenshot 2023-05-29 at 4 16 15 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/0c3f61b7-7fca-4e8f-b4c7-281d8a0b95c2">
-- Check log if the aligner running properly
+  <img width="1762" alt="Run Aligner" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/b5a1170c-8229-487b-9c90-62447fac7038">
+- Check log if the aligner running properly from [here](https://huggingface.co/spaces/openpecha/tibetan-aligner-api)
   <img width="1467" alt="Screenshot 2023-05-29 at 4 24 05 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/e46df67e-3f2f-4084-a7fa-8de8701474d7">
