@@ -30,4 +30,12 @@
 python -m op_mt_tools.tm <path_to_MonlamAI_TMs_repo> --text_id $(cat text_pairs_list.txt)
 ```
 
+[MonlamAI_TMs](https://github.com/MonlamAI/MonlamAI_TMs) will contain all the exported TMs. Checkout it's README.md for how to use it.
+
 ## Publishing TMs as training data
+
+- we have setup corn job to publish new release of training data weekly.
+- [Releases](https://github.com/MonlamAI/MonlamAI_TMs/releases) are just github release with date as a version tag.
+- We have github [issue](https://github.com/MonlamAI/MonlamAI_TMs/issues) for getting feedback on the each release.
+
+Under the hood it's using `op_mt_tools.publish` to create new release.
