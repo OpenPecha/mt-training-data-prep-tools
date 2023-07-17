@@ -1,12 +1,8 @@
 # Getting started
 
-Intro
-
 ## 1. Prerequisites
 
 - Python 3.6 or higher
-- Pip
-- OpenAI API key for text cleanup commands
 
 ## 2. Installation
 
@@ -40,7 +36,16 @@ check out this [wokflow digram](data-pipeline.md#workflow-diagram) to better und
    python -m op_mt_tools.cli.en_text_cleanup <collection_path>
    ```
 
-1. **Add text pair to a collection and create TM**
+1. **Add text pair to a collection and triggers the Aligner to create TM**
+
+   Overview:
+
+   - takes list of text_pair ids as input
+   - preprocess `EN` and `BO` texts
+   - add the preproces text to the collection view
+   - Triggers the text aligner to create TM from the preprocess text
+     - here is alinger on [huggingface](https://huggingface.co/spaces/openpecha/tibetan-aligner-api)
+     - here the [source code](https://github.com/OpenPecha/tibetan-aligner-hf-space)
 
    clone this collection repo https://github.com/OpenPecha-Data/C1A81F448
 
@@ -89,6 +94,7 @@ check out this [wokflow digram](data-pipeline.md#workflow-diagram) to better und
 
 ## 5. Troubleshooting
 
+1. Make sure all the environment variables are set properly.
 1. Make sure the `GITHUB_TOKEN` has read and write access to [MonlamAI](https://github.com/MonlamAI) repos.
 1. Make sure the `OPENAI_API_KEY` is valid.
 
