@@ -17,30 +17,32 @@ Intro
 
 1. Environment variables
 
-   - `OPENAI_API_KEY` environment variable for cleanup commands
    - `GITHUB_USERNAME`: github username
    - `GITHUB_EMAIL`: github verified email
    - `GITHUB_TOKEN`: github token with read and write access to [MonlamAI](https://github.com/MonlamAI) repos.
-   - `MAI_GITHUB_ORG`: MonlamAI github org name
-   - `MAI_TMS_PUBLISH_TODO_REPO`: MonlamAI_TMs_Publish_TODO repo name
+   - `MAI_GITHUB_ORG`: MonlamAI github org name which is `MonlamAI`
+   - `MAI_TMS_PUBLISH_TODO_REPO`: [MonlamAI_TMs_Publish_TODO](https://github.com/OpenPecha-Data/C1A81F448) repo name
    - `OPENPECHA_DATA_GITHUB_ORG`: openpecha data github org which is `OpenPecha-Data`
    - `HF_TOKEN`: huggingface token to trigger the text aligner to create Translation Memory (TM)
+   - `OPENAI_API_KEY`: (_optional_) for cleanup commands for English text
 
 ## 4. Short how-to
 
-If you looking for how to run data pipeline then follow this [link](data-pipeline.md).
+If you looking for how to run the data pipeline then follow this [link](data-pipeline.md).
 
 ### Following are the step by step commands to run the pipeline manually
 
-check out the wokflow digram [here](data-pipeline.md#workflow-diagram)
+check out this [wokflow digram](data-pipeline.md#workflow-diagram) to better understand what the following commands does.
 
-1. Cleanup English text (_Optional_)
+1. **Cleanup English text** (_Optional_)
 
    ```bash
    python -m op_mt_tools.cli.en_text_cleanup <collection_path>
    ```
 
-1. add text pair to a collection and create Aligments (TM)
+1. **Add text pair to a collection and create TM**
+
+   clone this collection repo https://github.com/OpenPecha-Data/C1A81F448
 
    ```bash
    python -m op_mt_tools.cli.add_texts_pair <collection_path> --text_ids <text_id1> <text_id2>
@@ -60,7 +62,7 @@ check out the wokflow digram [here](data-pipeline.md#workflow-diagram)
 
    ```
 
-1. Export TMs
+1. **Export the TMs**
 
    clone this repo https://github.com/MonlamAI/MonlamAI_TMs
 
@@ -74,7 +76,7 @@ check out the wokflow digram [here](data-pipeline.md#workflow-diagram)
    0504 0702 0709 0710 0723 0725 0726 0728 0746 0747 0751
    ```
 
-1. Publish new official release of TMs
+1. **Publish new official release of TMs**
 
    Clone the following repos:
 
