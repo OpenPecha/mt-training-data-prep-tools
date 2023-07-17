@@ -6,8 +6,10 @@
 
 ## 2. Installation
 
-1. Clone the repo `git clone https://github.com/OpenPecha/mt-training-data-prep-tools.git`
-2. Install with `pip install -e .`
+```bash
+git clone https://github.com/OpenPecha/mt-training-data-prep-tools.git
+pip install -e .
+```
 
 ## 3. Configuration
 
@@ -43,9 +45,7 @@ check out this [wokflow digram](data-pipeline.md#workflow-diagram) to better und
    - takes list of text_pair ids as input
    - preprocess `EN` and `BO` texts
    - add the preproces text to the collection view
-   - Triggers the text aligner to create TM from the preprocess text
-     - here is alinger on [huggingface](https://huggingface.co/spaces/openpecha/tibetan-aligner-api)
-     - here the [source code](https://github.com/OpenPecha/tibetan-aligner-hf-space)
+   - Triggers the [Aligner Service](aligner.md) to create TM from the preprocess text
 
    clone this collection repo https://github.com/OpenPecha-Data/C1A81F448
 

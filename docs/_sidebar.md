@@ -1,6 +1,7 @@
 - [Overview](README.md)
 - [Getting started](getting-started.md)
 - [Data Pipeline](data-pipeline.md)
+- [Aligner Service](aligner.md)
 - [Reference](reference.md)
 - [Help](help.md)
 - [License](LICENSE.md)
