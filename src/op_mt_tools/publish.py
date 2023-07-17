@@ -19,6 +19,7 @@ def commit_and_push_changes(repo_path):
     # Commit and push submodule changes
     os.chdir(repo_path)
     print("[INFO] Committing and pushing changes...")
+    subprocess.run(["git", "add", "--all"])
     subprocess.run(["git", "commit", "-am", "Update TMs"])
     subprocess.run(["git", "push"])
 
