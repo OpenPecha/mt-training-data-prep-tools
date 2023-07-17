@@ -120,14 +120,15 @@ def main():
         description="Update submodules, create release, and open issue for a repository"
     )
     parser.add_argument("tms_repo_path", help="TMs repo path")
-    parser.add_argument("publish_todo_path", help="Publish TODO repo path")
+    parser.add_argument("--publish_todo_path", help="Publish TODO repo path")
     parser.add_argument(
         "--no-release", action="store_true", help="Skip creating a new release"
     )
     args = parser.parse_args()
 
     # Update submodules
-    add_TMs(Path(args.tms_repo_path), Path(args.publish_todo_path))
+    if args.publish_todo_path:
+        add_TMs(Path(args.tms_repo_path), Path(args.publish_todo_path))
     update_submodules(args.tms_repo_path)
     commit_and_push_changes(args.tms_repo_path, "update TMs")
 
