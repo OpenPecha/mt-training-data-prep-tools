@@ -4,6 +4,61 @@ import os
 import random
 import string
 import subprocess
+import time
+from pathlib import Path
+
+
+def commit_and_push_changes(repo_path, msg):
+    # Commit and push submodule changes
+    os.chdir(repo_path)
+    print("[INFO] Committing and pushing changes...")
+    subprocess.run(["git", "add", "--all"])
+    subprocess.run(["git", "commit", "-m", msg])
+    subprocess.run(["git", "push"])
+
+
+def get_TMs_ids(repo_path: Path):
+    """Get all latest TMs."""
+    os.chdir(repo_path)
+    subprocess.run(["git", "pull"])
+    for path in Path(repo_path).iterdir():
+        if path.name == "README.md":
+            continue
+        yield path.name
+
+
+def export_TM(tm: str, export_dir: Path, branch):
+    """Export TM as submodules of `output_dir`."""
+    tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
+    subprocess.run(
+        ["git", "submodule", "add", "-b", branch, "--force", tm_url], cwd=export_dir
+    )
+
+
+def add_TMs(
+    tms_repo_path: Path,
+    publish_todo_repo_path: Path,
+    branch: str = "main",
+):
+    """Export all latest TMs."""
+    print("[INFO] Adding New TMs ...")
+    tm_ids = get_TMs_ids(publish_todo_repo_path)
+
+    if not tm_ids:
+        print("[INFO] No TM found. Exiting...")
+        return
+
+    for tm_id in tm_ids:
+        if not tm_id:
+            continue
+        if tms_repo_path.joinpath(tm_id).exists():
+            print(f"[INFO] {tm_id} already exists. Skipping...")
+            continue
+        export_TM(tm_id, tms_repo_path, branch)
+
+    msg = "add TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    commit_and_push_changes(tms_repo_path, msg)
+    print("[INFO] Exporting all TMs done!")
 
 
 def update_submodules(repo_path):
@@ -13,15 +68,6 @@ def update_submodules(repo_path):
     subprocess.run(["git", "pull"])
     print("[INFO] Updating TMs...")
     subprocess.run(["git", "submodule", "update", "--init", "--remote", "--recursive"])
-
-
-def commit_and_push_changes(repo_path):
-    # Commit and push submodule changes
-    os.chdir(repo_path)
-    print("[INFO] Committing and pushing changes...")
-    subprocess.run(["git", "add", "--all"])
-    subprocess.run(["git", "commit", "-am", "Update TMs"])
-    subprocess.run(["git", "push"])
 
 
 def create_release(version):
@@ -73,15 +119,17 @@ def main():
     parser = argparse.ArgumentParser(
         description="Update submodules, create release, and open issue for a repository"
     )
-    parser.add_argument("repo_path", help="Repository path")
+    parser.add_argument("tms_repo_path", help="TMs repo path")
+    parser.add_argument("publish_todo_path", help="Publish TODO repo path")
     parser.add_argument(
         "--no-release", action="store_true", help="Skip creating a new release"
     )
     args = parser.parse_args()
 
     # Update submodules
-    update_submodules(args.repo_path)
-    commit_and_push_changes(args.repo_path)
+    add_TMs(Path(args.tms_repo_path), Path(args.publish_todo_path))
+    update_submodules(args.tms_repo_path)
+    commit_and_push_changes(args.tms_repo_path, "update TMs")
 
     # Create new release or skip if specified
     if not args.no_release:
