@@ -1,6 +1,7 @@
 # Data Pipeline
 
 ## Overview workflow
+![MonlamAI TM Data Pipeline Workflow](https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/fb8ab76e-08ef-4124-a36f-37e3cb544a94)
 
 ## Create New TM
 
@@ -13,29 +14,12 @@
 1. Check log if the aligner running properly (shown in the image below)
    <img width="1467" alt="Screenshot 2023-05-29 at 4 24 05 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/e46df67e-3f2f-4084-a7fa-8de8701474d7">
 
-## Export TMs
-
-1. clone this repo https://github.com/MonlamAI/MonlamAI_TMs
-2. Store all TMs ids in a file `text_pairs_list.txt`. (shown in the example below)
-
-(content of `text_pairs_list.txt`)
-
-```txt
-0504 0702 0709 0710 0723 0725 0726 0728 0746 0747 0751
-```
-
-3. Run the follwing command to export
-
-```bash
-python -m op_mt_tools.tm <path_to_MonlamAI_TMs_repo> --text_id $(cat text_pairs_list.txt)
-```
-
-[MonlamAI_TMs](https://github.com/MonlamAI/MonlamAI_TMs) will contain all the exported TMs. Checkout it's README.md for how to use it.
-
 ## Publishing TMs as training data
 
 - we have setup corn job to publish new release of training data weekly.
 - [Releases](https://github.com/MonlamAI/MonlamAI_TMs/releases) are just github release with date as a version tag.
 - We have github [issue](https://github.com/MonlamAI/MonlamAI_TMs/issues) for getting feedback on the each release.
+
+[MonlamAI_TMs](https://github.com/MonlamAI/MonlamAI_TMs) will contain all the exported TMs. Checkout it's README.md for how to use it.
 
 Under the hood it's using `op_mt_tools.publish` to create new release.
