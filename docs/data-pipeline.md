@@ -3,11 +3,11 @@
 ## Overview workflow
 ![MonlamAI TM Data Pipeline Workflow](https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/fb8ab76e-08ef-4124-a36f-37e3cb544a94)
 
-## Create New TM
+## Starting the pipeline
 
-1. Get text list from Ready sheet of [Translation Catalog](https://docs.google.com/spreadsheets/d/14CA5kyoAkty2sHhkMT5ZX05Otm7eSGYAt0zAt59xQwI/edit#gid=1563391012)
+1. Get text list from Ready sheet of [Translation Catalog](https://docs.google.com/spreadsheets/d/14CA5kyoAkty2sHhkMT5ZX05Otm7eSGYAt0zAt59xQwI/edit#gid=1563391012). Here, the text list is list of text ids without the language prefix (like `EN` and `BO`), e.g, text id of `EN0001` and `BO0001` is `0001` 
 1. Go to https://github.com/OpenPecha-Data/C1A81F448
-1. Set text list as input (shown in the image below)
+1. Set text list as input (follow the steps shown in the image below)
    <img width="1255" alt="run_aligner_input" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/9fea13e8-1c83-446f-a96d-cd92fbbaf9f9">
 1. Run Alinger (shown in the image below)
    <img width="1762" alt="Run Aligner" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/b5a1170c-8229-487b-9c90-62447fac7038">
