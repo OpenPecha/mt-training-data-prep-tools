@@ -96,7 +96,7 @@ def get_all_TMs() -> Optional[List[str]]:
 def export_TM(tm: str, export_dir: Path, branch):
     """Export TM as submodules of `output_dir`."""
     tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
-    submodule_path = f"{tm}"
+    submodule_path = f"data/{tm}"
     subprocess.run(
         ["git", "submodule", "add", "-b", branch, "--force", tm_url, submodule_path],
         cwd=export_dir,
