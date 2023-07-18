@@ -9,11 +9,9 @@ def add_submodule_branch():
 
     for section in config.sections():
         if section.startswith("submodule "):
-            submodule_branch = config.get(section, "branch", fallback=None)
+            submodule_path = config.get(section, "path", fallback=None)
 
-            if submodule_branch is None:
-                submodule_branch = "main"
-                config.set(section, "branch", submodule_branch)
+            config.set(section, "path", f"data/{submodule_path}")
 
     with open(output_path, "w") as configfile:
         config.write(configfile)

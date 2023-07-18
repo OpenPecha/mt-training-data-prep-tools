@@ -27,11 +27,13 @@ def get_TMs_ids(repo_path: Path):
         yield path.name
 
 
-def export_TM(tm: str, export_dir: Path, branch):
+def export_TM(tm: str, export_dir: Path, branch, parent_dir):
     """Export TM as submodules of `output_dir`."""
     tm_url = f"https://github.com/{os.environ['MAI_GITHUB_ORG']}/{tm}.git"
+    submodule_path = f"{parent_dir}/{tm}"
     subprocess.run(
-        ["git", "submodule", "add", "-b", branch, "--force", tm_url], cwd=export_dir
+        ["git", "submodule", "add", "-b", branch, "--force", tm_url, submodule_path],
+        cwd=export_dir,
     )
 
 
@@ -39,6 +41,7 @@ def add_TMs(
     tms_repo_path: Path,
     publish_todo_repo_path: Path,
     branch: str = "main",
+    parent_dir: str = "data",
 ):
     """Export all latest TMs."""
     print("[INFO] Adding New TMs ...")
@@ -54,7 +57,7 @@ def add_TMs(
         if tms_repo_path.joinpath(tm_id).exists():
             print(f"[INFO] {tm_id} already exists. Skipping...")
             continue
-        export_TM(tm_id, tms_repo_path, branch)
+        export_TM(tm_id, tms_repo_path, branch, parent_dir)
 
     msg = "add TMs on " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     commit_and_push_changes(tms_repo_path, msg)
