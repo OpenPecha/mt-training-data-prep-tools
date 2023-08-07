@@ -13,15 +13,30 @@ from gradio_client.utils import Status as JobStatus
 
 from . import types as t
 from .github_utils import commit_and_push, get_github_repos_with_prefix
+from .huggingface import start_aligner_service
 
-client = None
+# Envs
+HF_TOKEN = os.environ["HF_TOKEN"]
+
+clients: List[Client] = []
+clients_names = [
+    "openpecha/tibetan-aligner-api",
+    "openpecha/tibetan-aligner-api-2",
+]
+client_access_count = 0
 
 
-def get_client():
-    global client
-    if not client:
-        client = Client("openpecha/tibetan-aligner-api")
-    return client
+def get_client(max_clients: int = len(clients_names)) -> Client:
+    global client_access_count
+
+    if len(clients) != max_clients:
+        for client_name in clients_names:
+            start_aligner_service(id_=client_name)
+            clients.append(Client(client_name, hf_token=HF_TOKEN))
+
+    client_idx = client_access_count % max_clients
+    client_access_count += 1
+    return clients[client_idx]
 
 
 def run_aligner(input_json_fn: Path):

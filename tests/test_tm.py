@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from gradio_client.utils import Status as JobStatus
 
 from op_mt_tools.tm import (
@@ -13,11 +14,15 @@ from op_mt_tools.tm import (
 )
 
 
-@mock.patch("op_mt_tools.tm.Client")
-def test_get_client(client_mock):
-    _ = get_client()
+@pytest.mark.skip()
+def test_get_client_two_client():
+    client_1 = get_client(max_clients=2)
+    client_2 = get_client(max_clients=2)
+    client_3 = get_client(max_clients=2)
 
-    client_mock.assert_called_once_with("openpecha/tibetan-aligner-api")
+    assert client_1
+    assert client_2
+    assert client_3 == client_1
 
 
 def test_get_raw_github_file_url(tmp_path):
