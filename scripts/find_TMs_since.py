@@ -39,4 +39,4 @@ with open(output_file, "w") as f:
             continue
 
         print(TM_id, commit.committed_datetime)
-        f.write(TM_id + "\n")
+        f.write(TM_id + " ")
