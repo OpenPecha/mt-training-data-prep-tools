@@ -52,7 +52,8 @@ def qc_pipeline(tm_id: str):
 
     try:
         text_files = get_github_file_contents(owner, tm_id, access_token)
-    except requests.exceptions.HTTPError:
+    except requests.exceptions.HTTPError as e:
+        print(e)
         msg = f"[QC Failed] TM_id: {tm_id}, TM not found"
         log_failed_qc_tm_id(msg)
         return
@@ -64,6 +65,7 @@ def qc_pipeline(tm_id: str):
 
 def run_qc(args):
     for tm_id in args.tm_ids:
+        tm_id = tm_id if tm_id.startswith("TM") else f"TM{tm_id}"
         qc_pipeline(tm_id)
 
 
