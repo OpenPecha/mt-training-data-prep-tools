@@ -7,7 +7,7 @@ qc_failed_tm_ids_fn = "TM_failed_qc.txt"
 
 
 def get_github_file_contents(owner, repo, access_token, file_extension=".txt"):
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents"
+    url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.get(url, headers=headers)
@@ -25,6 +25,7 @@ def get_github_file_contents(owner, repo, access_token, file_extension=".txt"):
 def check_text_file_lines(owner, repo, access_token):
     text_files = get_github_file_contents(owner, repo, access_token)
 
+    passed_text_files = 0
     for file in text_files:
         url = file["download_url"]
         response = requests.get(
@@ -36,9 +37,9 @@ def check_text_file_lines(owner, repo, access_token):
         lines = content.strip().split("\n")
 
         if len(lines) > 1:
-            print(f"File: {file['name']} has more than one line.")
-        else:
-            print(f"File: {file['name']} contains only one line.")
+            passed_text_files += 1
+
+    return passed_text_files == len(text_files)
 
 
 def log_failed_qc_tm_id(tm_id: str):
@@ -71,3 +72,7 @@ def main():
     args = parser.parse_args()
 
     run_qc(args)
+
+
+if __name__ == "__main__":
+    main()
