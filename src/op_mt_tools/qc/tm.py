@@ -22,12 +22,7 @@ def get_github_file_contents(owner, repo, access_token, file_extension=".txt"):
     return text_files
 
 
-def check_text_file_lines(owner, repo, access_token):
-    try:
-        text_files = get_github_file_contents(owner, repo, access_token)
-    except requests.exceptions.HTTPError:
-        return False
-
+def check_text_file_lines(text_files, access_token):
     passed_text_files = 0
     for file in text_files:
         url = file["download_url"]
@@ -55,7 +50,14 @@ def qc_pipeline(tm_id: str):
     owner = "MonlamAI"
     access_token = os.environ["GITHUB_TOKEN"]
 
-    if not check_text_file_lines(owner, tm_id, access_token):
+    try:
+        text_files = get_github_file_contents(owner, tm_id, access_token)
+    except requests.exceptions.HTTPError:
+        msg = f"[QC Failed] TM_id: {tm_id}, TM not found"
+        log_failed_qc_tm_id(msg)
+        return
+
+    if not check_text_file_lines(text_files, access_token):
         msg = f"[QC Failed] TM_id: {tm_id}, test: {check_text_file_lines.__name__}"
         log_failed_qc_tm_id(msg)
 
