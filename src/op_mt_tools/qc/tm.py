@@ -23,7 +23,11 @@ def get_github_file_contents(owner, repo, access_token, file_extension=".txt"):
 
 
 def check_text_file_lines(owner, repo, access_token):
-    text_files = get_github_file_contents(owner, repo, access_token)
+    try:
+        text_files = get_github_file_contents(owner, repo, access_token)
+    except requests.exceptions.HTTPError:
+        return False
+
     passed_text_files = 0
     for file in text_files:
         url = file["download_url"]
