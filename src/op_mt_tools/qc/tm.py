@@ -46,6 +46,7 @@ def check_text_file_lines(owner, repo, access_token):
 
 
 def log_failed_qc_tm_id(msg: str):
+    print(msg)
     with open(qc_failed_tm_ids_fn, "a") as f:
         f.write(msg + "\n")
 
@@ -55,7 +56,7 @@ def qc_pipeline(tm_id: str):
     access_token = os.environ["GITHUB_TOKEN"]
 
     if not check_text_file_lines(owner, tm_id, access_token):
-        msg = "[QC Failed] TM_id: {tm_id}, test: {check_text_file_lines.__name__}"
+        msg = f"[QC Failed] TM_id: {tm_id}, test: {check_text_file_lines.__name__}"
         log_failed_qc_tm_id(msg)
 
 
