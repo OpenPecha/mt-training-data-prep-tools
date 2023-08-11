@@ -3,8 +3,6 @@ from pathlib import Path
 
 from op_mt_tools.pipelines import add_text_pair_to_collection_pipeline
 
-from op_mt_tools import config  # isort: skip
-
 if __name__ == "__main__":
     import argparse
 
@@ -30,9 +28,6 @@ if __name__ == "__main__":
         help="whether to use gpt cleaned text",
     )
     args = parser.parse_args()
-
-    if not args.gpt_cleaned:
-        config.CLEANDED_TEXT_PREFIX = ""
 
     add_text_pair_to_collection_pipeline(
         collection_path=Path(args.collection_path),

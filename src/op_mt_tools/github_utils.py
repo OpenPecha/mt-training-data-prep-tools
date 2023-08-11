@@ -42,6 +42,13 @@ def download_first_text_file_from_github_repo(
         and file["name"].startswith(prefix)
     ]
 
+    if not text_files:
+        text_files = [
+            file
+            for file in files
+            if file["type"] == "file" and file["path"].endswith(".txt")
+        ]
+
     # Download each text file
     if text_files:
         text_file = text_files[0]
