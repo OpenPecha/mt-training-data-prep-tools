@@ -1,87 +1,106 @@
-import argparse
-import os
+import csv
+import random
+from pathlib import Path
+from typing import Dict, List
 
-import requests
+from sentence_transformers import SentenceTransformer, util
 
-qc_failed_tm_ids_fn = "TM_failed_qc.txt"
+model = None
 
 
-def get_github_file_contents(owner, repo, access_token, file_extension=".txt"):
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
-    headers = {"Authorization": f"Bearer {access_token}"}
+def get_model():
+    global model
+    model_path = "buddhist-nlp/bod-eng-similarity"
+    if model is None:
+        model = SentenceTransformer(model_path)
+    return model
 
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
 
-    files = response.json()
-    text_files = [
-        file
-        for file in files
-        if file["type"] == "file" and file["name"].endswith(file_extension)
+def get_embedding(sentences):
+    model = get_model()
+    return model.encode(sentences, convert_to_tensor=True)
+
+
+def get_similarity(sentences1, sentences2):
+    embeddings1 = get_embedding(sentences1)
+    embeddings2 = get_embedding(sentences2)
+    cosine_scores = util.cos_sim(embeddings1, embeddings2)
+    return cosine_scores
+
+
+def get_text_paths(tm_path: Path) -> Dict[str, Path]:
+    text_paths = {}
+    for fn in tm_path.iterdir():
+        if not fn.name.endswith(".txt"):
+            continue
+
+        lang_code = fn.stem.split("-")[1]
+        text_paths[lang_code] = fn
+    return text_paths
+
+
+def get_sentence_pairs(tm_path: Path):
+    """Get sentence pair from text pair path."""
+    text_paths = get_text_paths(tm_path)
+    bo_sents = text_paths["bo"].read_text(encoding="utf-8").splitlines()
+    en_sents = text_paths["en"].read_text(encoding="utf-8").splitlines()
+    return bo_sents, en_sents[: len(bo_sents)]
+
+
+def get_sentence_pairs_random_sample(tm_path: Path, n=100):
+    bo_sents, en_sents = get_sentence_pairs(tm_path)
+    pair_idxs_sample = sorted(random.sample(range(len(bo_sents)), n))
+    bo_sents_sample = [bo_sents[i] for i in pair_idxs_sample]
+    en_sents_sample = [en_sents[i] for i in pair_idxs_sample]
+    return pair_idxs_sample, bo_sents_sample, en_sents_sample
+
+
+def get_sentence_pairs_sim(tm_path: Path):
+    bo_sents, en_sents = get_sentence_pairs(tm_path)
+    cosine_scores = get_similarity(bo_sents, en_sents)
+    return list(range(len(bo_sents))), bo_sents, en_sents, cosine_scores
+
+
+def get_sentence_pairs_sim_sample(tm_path: Path):
+    line_idxs, bo_sents, en_sents = get_sentence_pairs_random_sample(tm_path)
+    cosine_scores = get_similarity(bo_sents, en_sents)
+    return line_idxs, bo_sents, en_sents, cosine_scores
+
+
+def get_sentence_pairs_char_len_ratio(bo_sents: List[str], en_sents: List[str]):
+    char_len_ratios = [
+        len(bo_sent) / len(en_sent) for bo_sent, en_sent in zip(bo_sents, en_sents)
     ]
-    return text_files
+    return char_len_ratios
 
 
-def check_text_file_lines(text_files, access_token):
-    passed_text_files = 0
-    for file in text_files:
-        url = file["download_url"]
-        response = requests.get(
-            url, headers={"Authorization": f"Bearer {access_token}"}
+def save_to_csv(
+    line_idxs, bo_sents, en_sents, cosine_scores, char_len_ratios, csv_path
+):
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        csv_writer = csv.writer(f)
+        csv_writer.writerow(
+            ["line_num", "sim_score", "char_len_ratio", "bo_sent", "en_sent"]
         )
-        response.raise_for_status()
-
-        content = response.text
-        lines = content.strip().split("\n")
-
-        if len(lines) > 1:
-            passed_text_files += 1
-
-    return passed_text_files == len(text_files)
-
-
-def log_failed_qc_tm_id(msg: str):
-    print(msg)
-    with open(qc_failed_tm_ids_fn, "a") as f:
-        f.write(msg + "\n")
-
-
-def qc_pipeline(tm_id: str):
-    owner = "MonlamAI"
-    access_token = os.environ["GITHUB_TOKEN"]
-
-    try:
-        text_files = get_github_file_contents(owner, tm_id, access_token)
-    except requests.exceptions.HTTPError as e:
-        print(e)
-        msg = f"[QC Failed] TM_id: {tm_id}, TM not found"
-        log_failed_qc_tm_id(msg)
-        return
-
-    if not check_text_file_lines(text_files, access_token):
-        msg = f"[QC Failed] TM_id: {tm_id}, test: {check_text_file_lines.__name__}"
-        log_failed_qc_tm_id(msg)
-
-
-def run_qc(args):
-    for tm_id in args.tm_ids:
-        tm_id = tm_id if tm_id.startswith("TM") else f"TM{tm_id}"
-        qc_pipeline(tm_id)
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Check QC on TMs")
-
-    parser.add_argument(
-        "tm_ids",
-        nargs="+",
-        help="list of tm ids to QC",
-    )
-
-    args = parser.parse_args()
-
-    run_qc(args)
+        for i in range(len(bo_sents)):
+            csv_writer.writerow(
+                [
+                    line_idxs[i] + 1,
+                    f"{cosine_scores[i][i]:.4f}",
+                    f"{char_len_ratios[i]:.4f}",
+                    bo_sents[i],
+                    en_sents[i],
+                ]
+            )
+    print(f"Saved to {csv_path}")
 
 
 if __name__ == "__main__":
-    main()
+    tm_path = Path(__file__).parent / "data" / "TM0165"
+    csv_path = Path(__file__).parent / "data" / f"{tm_path.name}_qc.csv"
+
+    line_idxs, bo_sents, en_sents, cosine_scores = get_sentence_pairs_sim_sample(
+        tm_path
+    )
+    char_len_ratios = get_sentence_pairs_char_len_ratio(bo_sents, en_sents)
+    save_to_csv(line_idxs, bo_sents, en_sents, cosine_scores, char_len_ratios, csv_path)
