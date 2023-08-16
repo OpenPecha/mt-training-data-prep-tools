@@ -1,14 +1,15 @@
 import csv
 import random
+import sys
 from pathlib import Path
 from typing import Dict, List
-
-from sentence_transformers import SentenceTransformer, util
 
 model = None
 
 
 def get_model():
+    from sentence_transformers import SentenceTransformer
+
     global model
     model_path = "buddhist-nlp/bod-eng-similarity"
     if model is None:
@@ -22,6 +23,8 @@ def get_embedding(sentences):
 
 
 def get_similarity(sentences1, sentences2):
+    from sentence_transformers import util
+
     embeddings1 = get_embedding(sentences1)
     embeddings2 = get_embedding(sentences2)
     cosine_scores = util.cos_sim(embeddings1, embeddings2)
@@ -69,7 +72,7 @@ def get_sentence_pairs_sim_sample(tm_path: Path):
 
 def get_sentence_pairs_char_len_ratio(bo_sents: List[str], en_sents: List[str]):
     char_len_ratios = [
-        len(bo_sent) / len(en_sent) for bo_sent, en_sent in zip(bo_sents, en_sents)
+        len(en_sent) / len(bo_sent) for bo_sent, en_sent in zip(bo_sents, en_sents)
     ]
     return char_len_ratios
 
@@ -96,11 +99,13 @@ def save_to_csv(
 
 
 if __name__ == "__main__":
-    tm_path = Path(__file__).parent / "data" / "TM0165"
-    csv_path = Path(__file__).parent / "data" / f"{tm_path.name}_qc.csv"
+    tm_id = sys.argv[1]
+    data_path = Path("data") / "qc"
+    assert data_path.exists()
+    tm_path = data_path / tm_id
+    assert tm_path.exists()
+    csv_path = data_path / f"{tm_path.name}_qc.csv"
 
-    line_idxs, bo_sents, en_sents, cosine_scores = get_sentence_pairs_sim_sample(
-        tm_path
-    )
+    line_idxs, bo_sents, en_sents, cosine_scores = get_sentence_pairs_sim(tm_path)
     char_len_ratios = get_sentence_pairs_char_len_ratio(bo_sents, en_sents)
     save_to_csv(line_idxs, bo_sents, en_sents, cosine_scores, char_len_ratios, csv_path)
