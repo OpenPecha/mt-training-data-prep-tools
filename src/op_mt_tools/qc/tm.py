@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
+
 model = None
 
 
@@ -22,13 +24,13 @@ def get_embedding(sentences):
     return model.encode(sentences, convert_to_tensor=True)
 
 
-def get_similarity(sentences1, sentences2):
+def get_similarity(sentences1, sentences2) -> List[float]:
     from sentence_transformers import util
 
     embeddings1 = get_embedding(sentences1)
     embeddings2 = get_embedding(sentences2)
     cosine_scores = util.cos_sim(embeddings1, embeddings2)
-    return cosine_scores
+    return np.array(cosine_scores).flatten().tolist()
 
 
 def get_text_paths(tm_path: Path) -> Dict[str, Path]:
@@ -89,7 +91,7 @@ def save_to_csv(
             csv_writer.writerow(
                 [
                     line_idxs[i] + 1,
-                    f"{cosine_scores[i][i]:.4f}",
+                    f"{cosine_scores[i]:.4f}",
                     f"{char_len_ratios[i]:.4f}",
                     bo_sents[i],
                     en_sents[i],

@@ -7,7 +7,7 @@ from typing import List, Tuple
 
 from .. import config
 from ..github_utils import commit_and_push
-from .tm import get_sentence_pairs
+from .tm import get_sentence_pairs, get_similarity
 
 # Configure the logging settings
 log_fn = config.LOGGING_PATH / f"qc-{datetime.now()}.log"
@@ -18,39 +18,30 @@ logging.basicConfig(
 )
 
 
-class CharLenRatioAvgMetric:
-    def __init__(self, avg_ratio=1.67, upper_bound=2, lower_bound=0.2):
-        self.avg_ratio = avg_ratio
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
+class SimilarityMetric:
+    def __init__(self, threshold=0.8, max_ranks=3):
+        self.threshold = threshold
+        self.max_ranks = max_ranks
 
-    @staticmethod
-    def get_pairs_char_len_ratio(bo_sents: List[str], en_sents: List[str]):
-        char_len_ratios = [
-            len(en_sent) / len(bo_sent) for bo_sent, en_sent in zip(bo_sents, en_sents)
-        ]
-        return char_len_ratios
-
-    def compute_rank(self, ratio: float) -> int:
-        ratio_norm = ratio / self.avg_ratio
-        if self.lower_bound <= ratio_norm <= self.upper_bound:
-            return 1
-        elif ratio_norm < self.lower_bound:
-            return 2
+    def compute_rank(self, sim_score: float) -> int:
+        sim_score = max(sim_score, 0.0)
+        if sim_score >= self.threshold:
+            return 0
         else:
-            return math.ceil(ratio_norm)
+            return math.ceil((self.threshold - sim_score) / self.max_ranks * 10)
 
-    def compute_overall_rank(self, ratios: List[float]) -> int:
-        ratios_avg = sum(ratios) / len(ratios)
-        return self.compute_rank(ratios_avg)
+    def compute_overall_rank(self, sim_scores: List[float]) -> int:
+        sim_scores = [max(sim_score, 0.0) for sim_score in sim_scores]
+        sim_scores_avg = sum(sim_scores) / len(sim_scores)
+        return self.compute_rank(sim_scores_avg)
 
     def __call__(
         self, bo_sents: List[str], en_sents: List[str]
     ) -> Tuple[List[int], int]:
-        char_len_ratios = self.get_pairs_char_len_ratio(bo_sents, en_sents)
-        ratio_ranks = [self.compute_rank(ratio) for ratio in char_len_ratios]
-        overall_rank = self.compute_overall_rank(char_len_ratios)
-        return ratio_ranks, overall_rank
+        sim_scores = get_similarity(bo_sents, en_sents)
+        sim_scores_ranks = [self.compute_rank(score) for score in sim_scores]
+        overall_rank = self.compute_overall_rank(sim_scores)
+        return sim_scores_ranks, overall_rank
 
 
 def add_notice_marker(
@@ -86,10 +77,10 @@ def run_pipeline(input_path: Path):
     for tm_path in input_path.iterdir():
         logging.info(f"QC  on {tm_path.name}")
         bo_sents, en_sents = get_sentence_pairs(tm_path)
-        metric = CharLenRatioAvgMetric()
-        char_len_ratio_ranks, tm_rank = metric(bo_sents, en_sents)
+        metric = SimilarityMetric()
+        ranks, tm_rank = metric(bo_sents, en_sents)
         reviewed_bo_sents, reviewed_en_sents = add_notice_marker(
-            bo_sents, en_sents, char_len_ratio_ranks
+            bo_sents, en_sents, ranks
         )
         save_review(tm_path, reviewed_bo_sents, reviewed_en_sents)
         logging.info(f"{tm_path.name} rank: {tm_rank}")

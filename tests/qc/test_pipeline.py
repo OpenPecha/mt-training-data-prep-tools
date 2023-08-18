@@ -1,56 +1,50 @@
-from op_mt_tools.qc.pipeline import CharLenRatioAvgMetric, add_notice_marker
+from unittest import mock
+
+from op_mt_tools.qc.pipeline import SimilarityMetric, add_notice_marker
+from op_mt_tools.qc.tm import get_similarity
 
 
-def test_char_len_ratio_avg_metric_1():
-    bo_sents = ["*" * 2]
-    en_sents = ["*" * 4]
-    metric = CharLenRatioAvgMetric(avg_ratio=1, upper_bound=2, lower_bound=0)
-    ranks = metric(bo_sents, en_sents)
+def test_get_similarity():
+    bo_sents = ["bo_text"]
+    en_sents = ["en_text"]
+    cosine_scores = get_similarity(bo_sents, en_sents)
 
-    assert ranks[0] == 1
-
-
-def test_char_len_ratio_avg_metric_2():
-    bo_sents = ["*" * 2]
-    en_sents = ["*" * 1]
-    metric = CharLenRatioAvgMetric(avg_ratio=1, upper_bound=2, lower_bound=0)
-    ranks = metric(bo_sents, en_sents)
-
-    assert ranks[0] == 1
+    assert isinstance(cosine_scores, list)
+    assert isinstance(cosine_scores[0], float)
+    assert len(cosine_scores) == 1
 
 
-def test_char_len_ratio_avg_metric_3():
-    bo_sents = ["*" * 2]
-    en_sents = ["*" * 10]
-    metric = CharLenRatioAvgMetric(avg_ratio=1, upper_bound=2, lower_bound=0)
-    ranks = metric(bo_sents, en_sents)
+@mock.patch("op_mt_tools.qc.pipeline.get_similarity")
+def test_similarity_metric(mock_get_similarity):
+    bo_sents = ["bo_text"]
+    en_sents = ["en_text"]
+    mock_get_similarity.return_value = [0.9]
 
-    assert ranks[0] == 5
+    metric = SimilarityMetric(threshold=0.9, max_ranks=3)
+    ranks, overall_rank = metric(bo_sents, en_sents)
 
-
-def test_add_notice_marker():
-    bo_sents = ["a"]
-    en_sents = ["a"]
-    ranks = [1]
-    notice_sign = "*"
-
-    marked_bo_sents, marked_en_sents = add_notice_marker(
-        bo_sents, en_sents, ranks, notice_sign=notice_sign
-    )
-
-    assert marked_bo_sents[0][0] != notice_sign
-    assert marked_en_sents[0][0] != notice_sign
+    assert ranks[0] == 0
+    assert overall_rank == 0
 
 
-def test_add_notice_marker_2():
-    bo_sents = ["a"]
-    en_sents = ["a"]
-    ranks = [5]
-    notice_sign = "*"
+@mock.patch("op_mt_tools.qc.pipeline.get_similarity")
+def test_similarity_metric_1(mock_get_similarity):
+    bo_sents = ["bo_text", "bo_text", "bo_text"]
+    en_sents = ["en_text", "en_text", "en_text"]
+    mock_get_similarity.return_value = [0.3, 0.6, 0.8]
 
-    marked_bo_sents, marked_en_sents = add_notice_marker(
-        bo_sents, en_sents, ranks, notice_sign=notice_sign
-    )
+    metric = SimilarityMetric(threshold=0.9, max_ranks=3)
+    ranks, overall_rank = metric(bo_sents, en_sents)
 
-    assert marked_bo_sents[0].startswith(notice_sign * ranks[0])
-    assert marked_en_sents[0].startswith(notice_sign * ranks[0])
+    assert ranks[0] == 3
+    assert ranks[1] == 2
+    assert ranks[2] == 1
+    assert overall_rank == 2
+
+
+def test_add_rank_marker():
+    bo_sents = ["bo_text", "bo_text", "bo_text"]
+    en_sents = ["en_text", "en_text", "en_text"]
+    ranks = [3, 2, 1]
+
+    reviewed_bo_sents, reviewed_en_sents = add_notice_marker(bo_sents, en_sents, ranks)
