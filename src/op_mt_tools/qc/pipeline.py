@@ -44,25 +44,35 @@ class SimilarityMetric:
         return sim_scores_ranks, overall_rank
 
 
-def add_notice_marker(
-    bo_sents: List[str], en_sents: List[str], ranks: List[int], notice_sign="⚠️"
+def add_rank_marker(
+    bo_sents: List[str], en_sents: List[str], ranks: List[int]
 ) -> Tuple[List[str], List[str]]:
-    reviewed_bo_sents = []
-    reviewed_en_sents = []
+    rank_markers = [
+        "0️⃣",
+        "1️⃣",
+        "2️⃣",
+        "3️⃣",
+        "4️⃣",
+        "5️⃣",
+        "6️⃣",
+        "7️⃣",
+        "8️⃣",
+        "9️⃣",
+        "🔟",
+    ]
+    ranked_bo_sents = []
+    ranked_en_sents = []
     for rank, bo_sent, en_sent in zip(ranks, bo_sents, en_sents):
-        if rank == 1:
-            marker = ""
-        else:
-            marker = notice_sign * rank + " "
+        rank_marker = "" if rank == 0 else f"{rank_markers[rank]} "
 
         # skip if already marked
-        if notice_sign in bo_sent and notice_sign in en_sent:
-            marker = ""
+        if bo_sent[0] in rank_markers:
+            rank_marker = ""
 
-        reviewed_bo_sents.append(f"{marker}{bo_sent.strip()}")
-        reviewed_en_sents.append(f"{marker}{en_sent.strip()}")
+        ranked_bo_sents.append(f"{rank_marker}{bo_sent.strip()}")
+        ranked_en_sents.append(f"{rank_marker}{en_sent.strip()}")
 
-    return reviewed_bo_sents, reviewed_en_sents
+    return ranked_bo_sents, ranked_en_sents
 
 
 def save_review(tm_path: Path, bo_sents: List[str], en_sents: List[str]):
@@ -79,7 +89,7 @@ def run_pipeline(input_path: Path):
         bo_sents, en_sents = get_sentence_pairs(tm_path)
         metric = SimilarityMetric()
         ranks, tm_rank = metric(bo_sents, en_sents)
-        reviewed_bo_sents, reviewed_en_sents = add_notice_marker(
+        reviewed_bo_sents, reviewed_en_sents = add_rank_marker(
             bo_sents, en_sents, ranks
         )
         save_review(tm_path, reviewed_bo_sents, reviewed_en_sents)

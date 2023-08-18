@@ -1,6 +1,6 @@
 from unittest import mock
 
-from op_mt_tools.qc.pipeline import SimilarityMetric, add_notice_marker
+from op_mt_tools.qc.pipeline import SimilarityMetric, add_rank_marker
 from op_mt_tools.qc.tm import get_similarity
 
 
@@ -43,8 +43,20 @@ def test_similarity_metric_1(mock_get_similarity):
 
 
 def test_add_rank_marker():
-    bo_sents = ["bo_text", "bo_text", "bo_text"]
-    en_sents = ["en_text", "en_text", "en_text"]
-    ranks = [3, 2, 1]
+    bo_sents = ["bo_text", "bo_text", "bo_text", "bo_text"]
+    en_sents = ["en_text", "en_text", "en_text", "en_text"]
+    ranks = [0, 1, 2, 3]
 
-    reviewed_bo_sents, reviewed_en_sents = add_notice_marker(bo_sents, en_sents, ranks)
+    ranked_bo_sents, ranked_en_sents = add_rank_marker(bo_sents, en_sents, ranks)
+
+    assert ranked_bo_sents[0] == "bo_text"
+    assert ranked_en_sents[0] == "en_text"
+
+    assert ranked_bo_sents[1] == "1️⃣ bo_text"
+    assert ranked_en_sents[1] == "1️⃣ en_text"
+
+    assert ranked_bo_sents[2] == "2️⃣ bo_text"
+    assert ranked_en_sents[2] == "2️⃣ en_text"
+
+    assert ranked_bo_sents[3] == "3️⃣ bo_text"
+    assert ranked_en_sents[3] == "3️⃣ en_text"
