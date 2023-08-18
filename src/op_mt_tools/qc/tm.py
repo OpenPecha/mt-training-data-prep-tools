@@ -1,8 +1,12 @@
 import csv
+import os
 import random
 import sys
 from pathlib import Path
 from typing import Dict, List
+
+from .. import config
+from ..github_utils import clone_or_pull_repo
 
 model = None
 
@@ -100,6 +104,15 @@ def save_to_csv(
                 ]
             )
     print(f"Saved to {csv_path}")
+
+
+def download_tm(tm_id: str) -> Path:
+    """Download TM from github."""
+    github_token = os.environ["GITHUB_TOKEN"]
+    org = os.environ["MAI_GITHUB_ORG"]
+    tm_path = config.TMS_PATH / tm_id
+    tm_path = clone_or_pull_repo(tm_id, org, github_token, tm_path)
+    return tm_path
 
 
 if __name__ == "__main__":

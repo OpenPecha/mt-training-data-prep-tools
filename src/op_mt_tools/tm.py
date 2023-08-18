@@ -166,3 +166,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     export_all_TMs(args.export_dir, tm_ids=args.tm_ids, branch=args.branch)
+    args = parser.parse_args()
+
+    export_all_TMs(args.export_dir, tm_ids=args.tm_ids, branch=args.branch)

@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 from .. import config
 from ..github_utils import commit_and_push
-from .tm import get_sentence_pairs, get_similarity
+from .tm import download_tm, get_sentence_pairs, get_similarity
 
 # Configure the logging settings
 log_fn = config.LOGGING_PATH / f"qc-{datetime.now()}.log"
@@ -99,9 +99,9 @@ def log_ranked_sents(
         logging.info(f"{rank} {sim_score} {bo_sent} ||| {en_sent}")
 
 
-def run_pipeline(tms_path: Path, tm_ids: List[str], disable_push=False, verbose=False):
-    assert tms_path.exists()
-    for tm_path in tms_path.iterdir():
+def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
+    for tm_id in tm_ids:
+        tm_path = download_tm(tm_id)
         if tm_path.name not in tm_ids:
             continue
         logging.info(f"Running QC on {tm_path.name}")
@@ -127,12 +127,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Add text pairs to collection.")
     parser.add_argument(
-        "tms_path",
-        type=str,
-        help="Path to list of TMs to run QC on.",
-    )
-    parser.add_argument(
-        "--tm_ids",
+        "tm_ids",
         type=str,
         nargs="+",
         help="TM ids to run QC on.",
@@ -151,7 +146,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_pipeline(
-        Path(args.tms_path),
         tm_ids=args.tm_ids,
         disable_push=args.disable_push,
         verbose=args.verbose,
