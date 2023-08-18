@@ -101,13 +101,23 @@ def log_ranked_sents(
 
 def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
     for tm_id in tm_ids:
-        tm_path = download_tm(tm_id)
+        try:
+            tm_path = download_tm(tm_id)
+        except Exception as e:
+            logging.error(f"Error in downloading {tm_id}")
+            logging.error(e)
+            continue
         if tm_path.name not in tm_ids:
             continue
         logging.info(f"Running QC on {tm_path.name}")
         metric = SimilarityMetric()
         rank_marker = RankMarker()
-        bo_sents, en_sents = get_sentence_pairs(tm_path)
+        try:
+            bo_sents, en_sents = get_sentence_pairs(tm_path)
+        except Exception as e:
+            logging.error(f"Error in getting sentence pairs for {tm_id}")
+            logging.error(e)
+            continue
         bo_sents, en_sents = rank_marker.remove(bo_sents, en_sents)
         ranks, sim_scores, tm_rank, tm_avg_sim_score = metric(bo_sents, en_sents)
         ranked_bo_sents, ranked_en_sents = rank_marker.mark(bo_sents, en_sents, ranks)
