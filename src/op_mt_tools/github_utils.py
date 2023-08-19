@@ -73,8 +73,11 @@ def commit_and_push(path: Path, msg: str) -> None:
     )
     repo = Repo(path)
     repo.git.add(".", "--all")
-    repo.git.commit("-m", msg)
-    repo.remotes.origin.push()
+    try:
+        repo.git.commit("-m", msg)
+        repo.remotes.origin.push()
+    except cmd.GitCommandError:
+        return
 
 
 def clone_or_pull_repo_form_url(repo_url: str, local_repo_path: Path) -> Path:
