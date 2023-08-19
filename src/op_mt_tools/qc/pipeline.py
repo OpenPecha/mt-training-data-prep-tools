@@ -129,7 +129,6 @@ def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
         )
         if not disable_push:
             commit_and_push(tm_path, "add QC review")
-        break
 
 
 if __name__ == "__main__":
