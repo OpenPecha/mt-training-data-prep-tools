@@ -62,7 +62,7 @@ def download_first_text_file_from_github_repo(
     return None
 
 
-def commit_and_push(path: Path, msg: str) -> None:
+def commit_and_push(path: Path, msg: str, branch="main") -> None:
     """Commit and push local repo."""
     # configure git users
     subprocess.run(
@@ -72,10 +72,14 @@ def commit_and_push(path: Path, msg: str) -> None:
         f"git config --global user.email {os.environ['GITHUB_EMAIL']}".split()
     )
     repo = Repo(path)
+    if branch in [branch.name for branch in repo.branches]:
+        repo.git.checkout(branch)
+    else:
+        repo.git.checkout("-b", branch)
     repo.git.add(".", "--all")
     try:
         repo.git.commit("-m", msg)
-        repo.remotes.origin.push()
+        repo.git.push("-u", "origin", branch)
     except cmd.GitCommandError:
         return
 

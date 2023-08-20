@@ -15,3 +15,5 @@ CLEANDED_TEXT_PREFIX = "[CLEANED]"
 
 LOGGING_PATH = DATA_PATH / "logs"
 LOGGING_PATH.mkdir(parents=True, exist_ok=True)
+
+QC_REVIEW_BRANCH_NAME = "qc-review"

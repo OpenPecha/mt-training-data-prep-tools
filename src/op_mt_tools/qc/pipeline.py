@@ -128,7 +128,9 @@ def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
             f"{tm_path.name} rank: {tm_rank}, avg sim score: {tm_avg_sim_score}"
         )
         if not disable_push:
-            commit_and_push(tm_path, "add QC review")
+            commit_and_push(
+                tm_path, "add QC review", branch=config.QC_REVIEW_BRANCH_NAME
+            )
 
 
 if __name__ == "__main__":
