@@ -118,6 +118,11 @@ def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
             logging.error(f"Error in getting sentence pairs for {tm_id}")
             logging.error(e)
             continue
+
+        if not bo_sents or not en_sents:
+            logging.error(f"Empty sentence pairs for {tm_id}")
+            continue
+
         bo_sents, en_sents = rank_marker.remove(bo_sents, en_sents)
         ranks, sim_scores, tm_rank, tm_avg_sim_score = metric(bo_sents, en_sents)
         ranked_bo_sents, ranked_en_sents = rank_marker.mark(bo_sents, en_sents, ranks)
@@ -129,6 +134,8 @@ def run_pipeline(tm_ids: List[str], disable_push=False, verbose=False):
         )
         if not disable_push:
             commit_and_push(tm_path, "add QC review")
+
+    logging.info("QC completed.")
 
 
 if __name__ == "__main__":
