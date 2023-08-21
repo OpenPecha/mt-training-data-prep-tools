@@ -11,7 +11,8 @@ def get_qc_logs():
         yield log_path.read_text(encoding="utf-8")
 
 
-def parse_rank():
+def parse_ranks():
+    ranks = []
     for log in get_qc_logs():
         pattern = r"TM(\d+)\s+rank: (\d+), avg sim score: ([\d.]+)"
         matches = re.findall(pattern, log)
@@ -19,7 +20,10 @@ def parse_rank():
             continue
         for match in matches:
             tm_id, rank, avg_sim_score = match
-            yield tm_id, rank, avg_sim_score
+            ranks.append((f"TM{tm_id}", rank, avg_sim_score))
+
+    ranks.sort(key=lambda x: x[2])
+    return ranks
 
 
 def parse_failed_download():
@@ -43,5 +47,5 @@ if __name__ == "__main__":
         for tm_id in parse_failed_download():
             print(tm_id)
     elif command == "rank":
-        for tm_id, rank, avg_sim_score in parse_rank():
+        for tm_id, rank, avg_sim_score in parse_ranks():
             print(f"{tm_id},{rank},{avg_sim_score}")
