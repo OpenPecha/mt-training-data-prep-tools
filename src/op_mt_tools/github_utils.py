@@ -1,10 +1,63 @@
+import logging
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import List, Optional
 
 import requests
 from git import Repo, cmd
+
+GITHUB_USERNAME = os.environ["GITHUB_USERNAME"]
+GITHUB_ACCESS_TOKEN = os.environ["GITHUB_TOKEN"]
+GITHUB_EMAIL = os.environ["GITHUB_EMAIL"]
+GITHUB_ORG = os.environ["MAI_GITHUB_ORG"]
+GITHUB_API_ENDPOINT = f"https://api.github.com/orgs/{GITHUB_ORG}/repos"
+
+DEBUG = os.getenv("DEBUG", False)
+quiet = "-q" if DEBUG else ""
+
+
+def create_github_repo_from_dir(repo_path: Path):
+    logging.debug("Creating GitHub repo...")
+    repo_name = repo_path.name
+
+    # configure git users
+    subprocess.run(f"git config --global user.name {GITHUB_USERNAME}".split())
+    subprocess.run(f"git config --global user.email {GITHUB_EMAIL}".split())
+
+    # Initialize a Git repository
+    subprocess.run(f"git init {quiet}".split(), cwd=str(repo_path))
+
+    # Commit the changes
+    subprocess.run("git add . ".split(), cwd=str(repo_path))
+    subprocess.run(
+        f"git commit {quiet} -m".split() + ["Initial commit"], cwd=str(repo_path)
+    )
+
+    # Create a new repository on GitHub
+    response = requests.post(
+        GITHUB_API_ENDPOINT,
+        json={
+            "name": repo_name,
+            "private": True,
+        },
+        auth=(GITHUB_USERNAME, GITHUB_ACCESS_TOKEN),
+    )
+    response.raise_for_status()
+
+    time.sleep(3)
+
+    # Add the GitHub remote to the local Git repository and push the changes
+    remote_url = f"https://{GITHUB_ORG}:{GITHUB_ACCESS_TOKEN}@github.com/{GITHUB_ORG}/{repo_name}.git"
+    subprocess.run(
+        f"git remote add origin {remote_url}", cwd=str(repo_path), shell=True
+    )
+    # rename default branch to main
+    subprocess.run("git branch -M main".split(), cwd=str(repo_path))
+    subprocess.run(f"git push {quiet} -u origin main".split(), cwd=str(repo_path))
+
+    return response.json()["html_url"]
 
 
 def download_first_text_file_from_github_repo(
