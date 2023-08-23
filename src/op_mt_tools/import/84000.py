@@ -51,7 +51,7 @@ def import_alignments(path: Path):
 
 def print_success_tms():
     logs = logger_path.read_text()
-    pattern = r"Imported TM: (\w+-\d+_84000)"
+    pattern = r"Imported TM: (TM.*_84000)"
     tm_ids = re.findall(pattern, logs)
     for tm_id in tm_ids:
         print(tm_id)
@@ -59,7 +59,7 @@ def print_success_tms():
 
 def print_failed_tms():
     logs = logger_path.read_text()
-    pattern = r"Error in creating github repo (\w+-\d+_84000)"
+    pattern = r"Error in creating github repo (TM.*_84000)"
     tm_ids = re.findall(pattern, logs)
     for tm_id in tm_ids:
         print(tm_id)
