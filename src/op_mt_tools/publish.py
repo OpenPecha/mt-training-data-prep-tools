@@ -7,7 +7,7 @@ from typing import List
 
 from .logger import setup_logger
 
-log_fn = setup_logger(__name__)
+log_fn = setup_logger(Path(__file__).name)
 
 GITHUB_ORG = os.environ["MAI_GITHUB_ORG"]
 
@@ -100,11 +100,11 @@ def print_failed_tms():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Update submodules, create release, and open issue for a repository"
+        description="Add TMs to dataset or update existing TMs"
     )
     parser.add_argument("dataset_path", help="TMs repo path")
     parser.add_argument(
-        "tm_ids",
+        "--tm_ids",
         nargs="+",
         help="TM ids to be added",
     )
