@@ -115,7 +115,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    add_tms_to_dataset(Path(args.dataset_path), args.tm_ids)
-
-    if args.update_tms:
+    if args.tm_ids:
+        add_tms_to_dataset(Path(args.dataset_path), args.tm_ids)
+    elif args.update_tms:
         update_submodules(args.dataset_path)
+    else:
+        parser.print_help()
