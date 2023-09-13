@@ -3,9 +3,9 @@ import re
 import shutil
 from pathlib import Path
 
-from .. import config
-from ..github_utils import create_github_repo_from_dir
-from ..logger import setup_logger
+from op_mt_tools import config
+from op_mt_tools.github_utils import create_github_repo_from_dir
+from op_mt_tools.logger import setup_logger
 
 TM_SUFFIX = "84000"
 

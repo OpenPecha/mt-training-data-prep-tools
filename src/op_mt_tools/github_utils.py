@@ -18,6 +18,23 @@ DEBUG = os.getenv("DEBUG", False)
 quiet = "-q" if DEBUG else ""
 
 
+def check_repo_exists(org, repo_name, access_token):
+    url = f"https://api.github.com/repos/{org}/{repo_name}"
+    headers = {
+        "Authorization": f"token {access_token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return True
+    elif response.status_code == 404:
+        return False
+    else:
+        response.raise_for_status()
+
+
 def create_github_repo_from_dir(repo_path: Path):
     logging.debug("Creating GitHub repo...")
     repo_name = repo_path.name
