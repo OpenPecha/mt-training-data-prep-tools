@@ -91,44 +91,11 @@ def download_first_text_file_from_github_repo(
     Returns:
         output_fn(optionl[Path]): path to download text file if it exists.
     """
-    api_base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github+json",
-    }
+    repo_path = clone_or_pull_repo(repo_name, repo_owner, token, output_path)
 
-    # Get the list of files in the repository
-    url = f"{api_base_url}/contents"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    files = response.json()
-
-    # Filter the text files at the root level
-    text_files = [
-        file
-        for file in files
-        if file["type"] == "file"
-        and file["path"].endswith(".txt")
-        and file["name"].startswith(prefix)
-    ]
-
-    if not text_files:
-        text_files = [
-            file
-            for file in files
-            if file["type"] == "file" and file["path"].endswith(".txt")
-        ]
-
-    # Download each text file
-    if text_files:
-        text_file = text_files[0]
-        raw_url = text_file["download_url"]
-        response = requests.get(raw_url, headers=headers)
-        response.raise_for_status()
-
-        output_fn = output_path / f"{Path(text_file['name']).stem[:50]}.txt"
-        output_fn.write_text(response.text)
-        return output_fn
+    for text_fn in sorted(repo_path.glob("*.txt")):
+        if text_fn.name.startswith(prefix):
+            return text_fn
     return None
 
 
