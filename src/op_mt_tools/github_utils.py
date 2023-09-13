@@ -78,7 +78,7 @@ def create_github_repo_from_dir(repo_path: Path):
 
 
 def download_first_text_file_from_github_repo(
-    repo_owner: str, repo_name: str, token: str, output_path: Path, prefix: str = ""
+    repo_owner: str, repo_name: str, token: str, output_path: Path
 ) -> Optional[Path]:
     """Download text files from a GitHub repository.
 
@@ -94,8 +94,7 @@ def download_first_text_file_from_github_repo(
     repo_path = clone_or_pull_repo(repo_name, repo_owner, token, output_path)
 
     for text_fn in sorted(repo_path.glob("*.txt")):
-        if text_fn.name.startswith(prefix):
-            return text_fn
+        return text_fn
     return None
 
 
@@ -166,9 +165,9 @@ if __name__ == "__main__":
         output_path = Path(tmp_path) / "text"
         output_path.mkdir(parents=True, exist_ok=True)
         repo_owner = "MonlamAI"
-        repo_name = "EN0711"
+        repo_name = "BOtoh555_84000"
         token = os.environ["GITHUB_TOKEN"]
         downloaded_files = download_first_text_file_from_github_repo(
-            repo_owner, repo_name, token, output_path, prefix="[CLEANED]"
+            repo_owner, repo_name, token, output_path
         )
         print(downloaded_files)

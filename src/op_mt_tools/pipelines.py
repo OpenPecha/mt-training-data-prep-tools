@@ -51,7 +51,6 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
             repo_name=text_id,
             token=github_token,
             output_path=local_text_repo_path,
-            prefix=config.CLEANDED_TEXT_PREFIX if text_id.startswith("EN") else "",
         )
     except Exception as e:
         print(e)
