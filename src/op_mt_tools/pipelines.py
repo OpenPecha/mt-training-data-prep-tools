@@ -53,7 +53,8 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
             output_path=local_text_repo_path,
             prefix=config.CLEANDED_TEXT_PREFIX if text_id.startswith("EN") else "",
         )
-    except Exception:
+    except Exception as e:
+        print(e)
         try:
             text_file_fn = download_first_text_file_from_github_repo(
                 repo_owner="aspiration-ai",
@@ -61,7 +62,8 @@ def download_text(text_id: t.TEXT_ID) -> Tuple[bool, Path]:
                 token=github_token,
                 output_path=local_text_repo_path,
             )
-        except Exception:
+        except Exception as e:
+            print(e)
             text_file_fn = None
     text_file_exists = text_file_fn is not None
     return text_file_exists, local_text_repo_path
