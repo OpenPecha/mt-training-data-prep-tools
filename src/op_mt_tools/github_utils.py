@@ -123,7 +123,7 @@ def commit_and_push(path: Path, msg: str, branch="main") -> None:
 
 def clone_or_pull_repo_form_url(repo_url: str, local_repo_path: Path) -> Path:
     """Clone or pull repo."""
-    if local_repo_path.is_dir():
+    if local_repo_path.is_dir() and (local_repo_path / ".git").is_dir():
         repo = Repo(local_repo_path)
         repo.remotes.origin.pull()
     else:
