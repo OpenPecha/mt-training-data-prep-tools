@@ -144,6 +144,11 @@ def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Pat
     return Path(local_path)
 
 
+def download_monlanai_repo(repo: str, local_path: Path) -> Path:
+    repo_path = clone_or_pull_repo(repo, GITHUB_ORG, GITHUB_ACCESS_TOKEN, local_path)
+    return repo_path
+
+
 def get_github_repos_with_prefix(
     org: str, token: str, prefix: str
 ) -> Optional[List[str]]:
