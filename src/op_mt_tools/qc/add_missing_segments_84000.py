@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from diff_match_patch import diff_match_patch
+from git import Repo
 
 from op_mt_tools import config
 from op_mt_tools.github_utils import commit_and_push, download_monlanai_repo
@@ -17,8 +18,21 @@ dmp.Diff_Timeout = 0
 
 def download_tm(tm_id):
     tm_path = config.TMS_PATH / tm_id
-    tm_path = download_monlanai_repo(tm_id, tm_path)
+    try:
+        tm_path = download_monlanai_repo(tm_id, tm_path)
+    except Exception:
+        logging.error(f"Error in downloading {tm_id}")
+        return
     return tm_path
+
+
+def is_missing_segments_fixed(tm_path):
+    repo = Repo(tm_path)
+    last_commit = repo.head.commit
+    if "Add missing segments" in last_commit.message:
+        return True
+    else:
+        return False
 
 
 def get_tm_text(tm_path: Path, lang: str):
@@ -29,7 +43,11 @@ def get_tm_text(tm_path: Path, lang: str):
 def get_src_text(tm_id: str, lang: str):
     repo_name = f"{lang.upper()}{tm_id[2:]}"
     repo_path = config.TEXTS_PATH / repo_name
-    repo_path = download_monlanai_repo(repo_name, repo_path)
+    try:
+        repo_path = download_monlanai_repo(repo_name, repo_path)
+    except Exception:
+        logging.error(f"Error in downloading {repo_name}")
+        return
     src_text_fn = list(repo_path.glob("*.txt"))[0]
     return src_text_fn.read_text().replace("\n", " ")
 
@@ -77,17 +95,31 @@ def en_postprocess(text):
     return text
 
 
-def add_missing_segments(tm_path):
+def add_missing_segments(tm_id):
+    tm_path = download_tm(tm_id)
+    if not tm_path:
+        return
+
+    if is_missing_segments_fixed(tm_path):
+        logging.info(f"{tm_id} is already fixed")
+        return
+
     tm_id = tm_path.name
     bo_text, bo_text_fn = get_tm_text(tm_path, "bo")
-    bo_src_text = get_src_text(tm_id, "bo")
     en_text, en_text_fn = get_tm_text(tm_path, "en")
+
+    bo_src_text = get_src_text(tm_id, "bo")
     en_src_text = get_src_text(tm_id, "en")
+
+    if not bo_src_text or not en_src_text:
+        logging.error(f"Source text not found for {tm_id}")
+        return
 
     bo_text_diffs = get_diff(bo_src_text, bo_remove_shad(bo_text))
     bo_merged_text = get_merged_text(bo_text_diffs)
     en_text_diffs = get_diff(en_src_text, en_text)
     en_merged_text = get_merged_text(en_text_diffs)
+
     if bo_merged_text.count("\n") != en_merged_text.count("\n"):
         logging.error(f"Segment does not match for {tm_id}")
         return
@@ -95,17 +127,16 @@ def add_missing_segments(tm_path):
     bo_text_fn.write_text(bo_postprocess(bo_merged_text))
     en_text_fn.write_text(en_postprocess(en_merged_text))
     logging.info(f"Added missing segments for {tm_id}")
+    return tm_path
 
 
 def run_pipeline(args):
     for tm_id in args.tm_ids:
         logging.info(f"Processing {tm_id}")
-        try:
-            tm_path = download_tm(tm_id)
-        except Exception:
-            logging.error(f"Failed to download {tm_id}")
+        tm_path = add_missing_segments(tm_id)
+
+        if not tm_path:
             continue
-        add_missing_segments(tm_path)
 
         if args.no_push:
             continue
