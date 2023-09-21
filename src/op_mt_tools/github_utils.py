@@ -137,10 +137,7 @@ def clone_or_pull_repo_form_url(repo_url: str, local_repo_path: Path) -> Path:
 def clone_or_pull_repo(repo: str, org: str, token: str, local_path: Path) -> Path:
     """Clone or pull repo."""
     repo_url = f"https://{token}@github.com/{org}/{repo}.git"
-    try:
-        local_path = clone_or_pull_repo_form_url(repo_url, local_path)
-    except ValueError:
-        pass
+    local_path = clone_or_pull_repo_form_url(repo_url, local_path)
     return Path(local_path)
 
 

@@ -65,7 +65,13 @@ def clean_text_repo(tm_id: str, lang: str):
     except Exception:
         logging.error(f"Error in downloading {text_id}")
         return
-    text_fn = list(text_repo_path.glob("*.txt"))[0]
+    text_fns = list(text_repo_path.glob("*.txt"))
+
+    if not text_fns:
+        logging.error(f"Error in downloading {text_id}")
+        return
+
+    text_fn = text_fns[0]
     text = text_fn.read_text()
     text = re.sub(r"\{\{.*\}\}", "", text)
     text_fn.write_text(text.strip())
@@ -74,7 +80,7 @@ def clean_text_repo(tm_id: str, lang: str):
 
 def push_repo(repo_path: Optional[Path], log_msg: str):
     if not repo_path:
-        logging.error("Failed to clean {log_msg}")
+        logging.error(f"Failed to clean {log_msg}")
         return
     try:
         commit_and_push(repo_path, "Cleaned")
