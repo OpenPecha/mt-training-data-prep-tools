@@ -42,7 +42,11 @@ def clean_tm(tm_id: str):
         text = re.sub(r"\{\{.*\}\}", "", text)
         return text.strip()
 
-    tm_path = download_tm(tm_id)
+    try:
+        tm_path = download_tm(tm_id)
+    except Exception:
+        logging.error(f"Error in downloading {tm_id}")
+        return
     bo_text, bo_text_fn = get_tm_text(tm_path, "bo")
     en_text, en_text_fn = get_tm_text(tm_path, "en")
     bo_text_cleaned = clean_bo(bo_text)
