@@ -6,7 +6,7 @@ from op_mt_tools import config
 from op_mt_tools.github_utils import commit_and_push, download_monlanai_repo
 from op_mt_tools.logger import setup_logger
 
-logger_name = "qc.delete_metadata"
+logger_name = "qc.clean_84000"
 logger_path = setup_logger(logger_name)
 
 
