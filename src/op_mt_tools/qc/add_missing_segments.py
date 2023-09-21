@@ -15,6 +15,12 @@ dmp = diff_match_patch()
 dmp.Diff_Timeout = 0
 
 
+def download_tm(tm_id):
+    tm_path = config.TMS_PATH / tm_id
+    tm_path = download_monlanai_repo(tm_id, tm_path)
+    return tm_path
+
+
 def get_tm_text(tm_path: Path, lang: str):
     text_fn = list(tm_path.glob(f"*-{lang.lower()}.txt"))[0]
     return text_fn.read_text(), text_fn
@@ -46,11 +52,13 @@ def get_merged_text(diffs):
 def bo_postprocess(text):
     text = re.sub(r"(། *)+", "། ", text)
     text = text.replace("\n ", "\n")
+    text = re.sub(r"\{\{.*\}\}", "", text)
     return text
 
 
 def en_postprocess(text):
-    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\{\{.*\}\}", "", text)
     return text
 
 
@@ -74,17 +82,20 @@ def add_missing_segments(tm_path):
     logging.info(f"Added missing segments for {tm_id}")
 
 
-def run_pipeline(path):
-    for tm_path in path.iterdir():
-        if not tm_path.is_dir():
+def run_pipeline(tm_ids):
+    for tm_id in tm_ids:
+        logging.info(f"Processing {tm_id}")
+        try:
+            tm_path = download_tm(tm_id)
+        except Exception:
+            logging.error(f"Failed to download {tm_id}")
             continue
-        logging.info(f"Processing {tm_path.name}")
         add_missing_segments(tm_path)
         try:
             commit_and_push(tm_path, "Add missing segments")
-            logging.info(f"Push {tm_path.name}")
+            logging.info(f"Push {tm_id}")
         except Exception:
-            logging.error(f"Error in pushing {tm_path.name}")
+            logging.error(f"Error in pushing {tm_id}")
 
 
 if __name__ == "__main__":
@@ -92,11 +103,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="add missing segment to TMs")
     parser.add_argument(
-        "path",
+        "tm_ids",
+        nargs="+",
         type=str,
-        help="Path to TMs",
+        help="list of TM ids",
     )
 
     args = parser.parse_args()
 
-    run_pipeline(Path(args.path))
+    run_pipeline(args.tm_ids)
