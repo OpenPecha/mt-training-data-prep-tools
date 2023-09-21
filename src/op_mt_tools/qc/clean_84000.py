@@ -1,6 +1,7 @@
 import logging
 import re
 from pathlib import Path
+from typing import Optional
 
 from op_mt_tools import config
 from op_mt_tools.github_utils import commit_and_push, download_monlanai_repo
@@ -59,13 +60,27 @@ def clean_tm(tm_id: str):
 
 def clean_text_repo(tm_id: str, lang: str):
     text_id = tm_id2text_id(tm_id, lang)
-    text_repo_path = download_text_repo(text_id)
-    print(text_repo_path)
+    try:
+        text_repo_path = download_text_repo(text_id)
+    except Exception:
+        logging.error(f"Error in downloading {text_id}")
+        return
     text_fn = list(text_repo_path.glob("*.txt"))[0]
     text = text_fn.read_text()
     text = re.sub(r"\{\{.*\}\}", "", text)
     text_fn.write_text(text.strip())
     return text_repo_path
+
+
+def push_repo(repo_path: Optional[Path], log_msg: str):
+    if not repo_path:
+        logging.error("Failed to clean {log_msg}")
+        return
+    try:
+        commit_and_push(repo_path, "Cleaned")
+    except Exception:
+        logging.error(f"Error in pushing {repo_path.name}")
+        return
 
 
 def run_pipeline(args):
@@ -75,10 +90,9 @@ def run_pipeline(args):
         bo_text_path = clean_text_repo(tm_id, "BO")
         en_text_path = clean_text_repo(tm_id, "EN")
         if not args.no_push:
-            if tm_path:
-                commit_and_push(tm_path, f"Cleaned {tm_id}")
-            commit_and_push(bo_text_path, f"Cleaned {tm_id}")
-            commit_and_push(en_text_path, f"Cleaned {tm_id}")
+            push_repo(tm_path, tm_id)
+            push_repo(bo_text_path, f"BO{tm_id[2:]}")
+            push_repo(en_text_path, f"EN{tm_id[2:]}")
         logging.info(f"Done {tm_id}")
 
 
