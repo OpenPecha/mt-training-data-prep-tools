@@ -82,8 +82,8 @@ def add_missing_segments(tm_path):
     logging.info(f"Added missing segments for {tm_id}")
 
 
-def run_pipeline(tm_ids):
-    for tm_id in tm_ids:
+def run_pipeline(args):
+    for tm_id in args.tm_ids:
         logging.info(f"Processing {tm_id}")
         try:
             tm_path = download_tm(tm_id)
@@ -91,6 +91,10 @@ def run_pipeline(tm_ids):
             logging.error(f"Failed to download {tm_id}")
             continue
         add_missing_segments(tm_path)
+
+        if args.no_push:
+            continue
+
         try:
             commit_and_push(tm_path, "Add missing segments")
             logging.info(f"Push {tm_id}")
@@ -108,7 +112,12 @@ if __name__ == "__main__":
         type=str,
         help="list of TM ids",
     )
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Do not push to github",
+    )
 
     args = parser.parse_args()
 
-    run_pipeline(args.tm_ids)
+    run_pipeline(args)
