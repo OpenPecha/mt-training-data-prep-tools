@@ -1,11 +1,10 @@
 import logging
-import os
 import re
-import shutil
 from pathlib import Path
+from typing import List, Optional
 
 from op_mt_tools import config
-from op_mt_tools.github_utils import check_repo_exists, create_github_repo_from_dir
+from op_mt_tools.github_utils import create_github_repo_from_dir
 from op_mt_tools.logger import setup_logger
 
 SOURCE_NAME = "84000"
@@ -22,27 +21,26 @@ def get_text_pair_files(path: Path):
         yield bo_text_fn, en_text_fn
 
 
-def get_tm_id(fn: Path, prefix: str):
-    soruce_id = fn.stem.split(f"-{prefix.lower()}")[0]
-    return f"TM{soruce_id}_{SOURCE_NAME}"
-
-
-def check_tm_exists(tm_id: str):
-    org = os.environ["MAI_GITHUB_ORG"]
-    token = os.environ["GITHUB_TOKEN"]
-    return check_repo_exists(org, tm_id, token)
+def get_source_id(fn, prefix):
+    return fn.stem.split(f"-{prefix.lower()}")[0]
 
 
 def get_text_id(fn: Path, prefix: str) -> str:
-    soruce_id = fn.stem.split(f"-{prefix.lower()}")[0]
-    return f"{prefix}{soruce_id}_{SOURCE_NAME}"
+    source_id = get_source_id(fn, prefix)
+    return f"{prefix}{source_id}_{SOURCE_NAME}"
+
+
+def get_text(fn: Path) -> str:
+    return "\n".join(fn.read_text().splitlines()[1:])
 
 
 def save_text(src_text_fn: Path, text_id: str):
     text_path = config.TEXTS_PATH / text_id
     text_path.mkdir(parents=True, exist_ok=True)
-    text_fn_cp = text_path / f"{text_id}.txt"
-    shutil.copyfile(str(src_text_fn), str(text_fn_cp))
+    dest_text_fn = text_path / f"{text_id}.txt"
+    text = get_text(src_text_fn)
+    dest_text_fn.write_text(text)
+
     try:
         create_github_repo_from_dir(text_path)
     except Exception as e:
@@ -56,15 +54,15 @@ def save_text_pair(bo_text_fn: Path, en_text_fn: Path):
     bo_text_id = get_text_id(bo_text_fn, "BO")
     en_text_id = get_text_id(en_text_fn, "EN")
 
-    if check_tm_exists(bo_text_id):
-        logging.info(f"Text pair ({bo_text_id}, {en_text_id}) already aligned)")
-        return
     save_text(bo_text_fn, bo_text_id)
     save_text(en_text_fn, en_text_id)
 
 
-def import_text_pairs(path: Path):
+def import_text_pairs(path: Path, text_ids: Optional[List[str]] = None):
     for bo_text_fn, en_text_fn in get_text_pair_files(path):
+        source_id = get_source_id(bo_text_fn, "BO")
+        if text_ids and source_id not in text_ids:
+            continue
         save_text_pair(bo_text_fn, en_text_fn)
 
 
@@ -93,6 +91,13 @@ if __name__ == "__main__":
         type=str,
         help="Path to the 84000 Text Pair directory",
     )
+
+    parser.add_argument(
+        "--text-ids",
+        nargs="+",
+        help="List of 84000 text ids to import",
+    )
+
     parser.add_argument(
         "--get-success-tms",
         action="store_true",
@@ -106,7 +111,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.path:
-        import_text_pairs(Path(args.path))
+        import_text_pairs(Path(args.path), args.text_ids)
     elif args.get_success_tms:
         print_success_tms()
     elif args.get_failed_tms:
