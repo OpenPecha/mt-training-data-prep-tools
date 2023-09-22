@@ -2,7 +2,7 @@ import logging
 import re
 from pathlib import Path
 
-from diff_match_patch import diff_match_patch
+from antx.core import get_diffs as anxt_get_diffs
 from git import Repo
 
 from op_mt_tools import config
@@ -11,9 +11,6 @@ from op_mt_tools.logger import setup_logger
 
 logger_name = "qc.add_missing_segments"
 logger_path = setup_logger(logger_name)
-
-dmp = diff_match_patch()
-dmp.Diff_Timeout = 0
 
 
 def download_tm(tm_id):
@@ -54,7 +51,7 @@ def get_src_text(tm_id: str, lang: str):
 
 def get_diff(text, src_text):
     text = text.strip()
-    return dmp.diff_main(text, src_text)
+    return anxt_get_diffs(text, src_text)
 
 
 def get_merged_text(diffs):
