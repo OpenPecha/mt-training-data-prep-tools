@@ -21,7 +21,7 @@ HF_TOKEN = os.environ["HF_TOKEN"]
 clients: List[Client] = []
 clients_names = [
     "openpecha/tibetan-aligner-api",
-    "openpecha/tibetan-aligner-api-2",
+    # "openpecha/tibetan-aligner-api-2",
 ]
 client_access_count = 0
 

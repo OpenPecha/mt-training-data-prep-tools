@@ -37,4 +37,5 @@ if __name__ == "__main__":
 
     for tm_id in args.tm_ids:
         exists = check_private_repo_existence(owner, tm_id, access_token)
-        print(f"{tm_id} exists: {exists}")
+        if not exists:
+            print(f"{tm_id} exists: {exists}")
