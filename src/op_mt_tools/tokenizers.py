@@ -1,5 +1,5 @@
 import re
-from typing import List, Tuple
+from typing import List
 
 import botok
 from spacy.lang.en import English
@@ -12,7 +12,6 @@ en_nlp.max_length = 5000000
 # Types
 SENT_PER_LINE_STR = str  # sentence per line string
 IS_AFFIX_PART = bool
-SENTS_WORDS = List[Tuple[str, IS_AFFIX_PART]]
 
 
 def get_bo_word_tokenizer():
@@ -65,29 +64,6 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
         else:
             return token.text
 
-    def is_affix_part(token):
-        affix_parts = ["ར་", "ས་", "འི་"]
-        text = get_token_text(token)
-        if text in affix_parts and token.pos == "PART":
-            return True
-        else:
-            return False
-
-    def merge_affix_part(sents_words: SENTS_WORDS) -> List[str]:
-        merged_affix_words: List[str] = []
-        for i in range(len(sents_words)):
-            word, is_affix_part = sents_words[i]
-            if is_affix_part:
-                prev_word, _ = sents_words[i - 1]
-                if prev_word[-1] == "་":
-                    prev_word = prev_word[:-1]
-                merged_affix_words[-1] = (
-                    prev_word + word
-                )  # remove last tsek of prev_word and add punct(word)
-            else:
-                merged_affix_words.append(word)
-        return merged_affix_words
-
     # fmt: off
     opening_puncts = ['༁', '༂', '༃', '༄', '༅', '༆', '༇', '༈', '༉', '༊', '༑', '༒', '༺', '༼', '༿', '࿐', '࿑', '࿓', '࿔', '࿙']  # noqa: E501
     closing_puncts = ['།', '༎', '༏', '༐', '༔', '༴', '༻', '༽', '༾', '࿚']  # noqa: E501
@@ -109,22 +85,22 @@ def bo_sent_tokenizer(text: str) -> SENT_PER_LINE_STR:
     ]
 
     text = bo_preprocess(text)
-    sents_words: SENTS_WORDS = []
+    sents_words = []
     tokenizer = get_bo_word_tokenizer()
-    tokens = tokenizer.tokenize(text)
+    tokens = tokenizer.tokenize(text, split_affixes=False)
     for token in tokens:
         if token.chunk_type in skip_chunk_types:
             continue
         token_text = get_token_text(token)
         if any(punct in token_text for punct in opening_puncts):
-            sents_words.append((token_text.strip(), False))
+            sents_words.append(token_text.strip())
         elif any(punct in token_text for punct in closing_puncts):
-            sents_words.append((token_text.strip(), False))
-            sents_words.append(("\n", False))
+            sents_words.append(token_text.strip())
+            sents_words.append("\n")
         else:
-            sents_words.append((token_text, is_affix_part(token)))
+            sents_words.append(token_text)
 
-    sents_text = "".join(merge_affix_part(sents_words))
+    sents_text = "".join(sents_words)
 
     for fr, to in r_replace:
         sents_text = re.sub(fr, to, sents_text)

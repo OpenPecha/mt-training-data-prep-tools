@@ -61,3 +61,21 @@ def test_bo_sent_tokenizer_affix():
 
     assert len(sents.splitlines()) == 1
     assert sents == "ཞེས་པས་"
+
+
+def test_bo_sent_tokenizer_affix_2():
+    text = "བཞིན་པའི་"
+
+    sents = bo_sent_tokenizer(text)
+
+    assert len(sents.splitlines()) == 1
+    assert sents == "བཞིན་པའི་"
+
+
+def test_bo_sent_tokenizer_affix_3():
+    text = "གསུམ་པའི་པའི་"
+
+    sents = bo_sent_tokenizer(text)
+
+    assert len(sents.splitlines()) == 1
+    assert sents == "གསུམ་པའི་པའི་"
