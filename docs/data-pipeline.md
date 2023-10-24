@@ -4,23 +4,59 @@
 
 ![MonlamAI TM Data Pipeline Workflow](https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/fb8ab76e-08ef-4124-a36f-37e3cb544a94)
 
+## Installation
+
+1. Login into the server via `ssh tenzin@openpecha.bdrc.io`
+1. cd into the `~/TM` directory
+1. Run `./scripts/install.sh`
+
 ## Starting the pipeline
 
 1. Get text list from Ready sheet of [Translation Catalog](https://docs.google.com/spreadsheets/d/14CA5kyoAkty2sHhkMT5ZX05Otm7eSGYAt0zAt59xQwI/edit#gid=1563391012). Here, the text list is list of text ids without the language prefix (like `EN` and `BO`), e.g, text id of `EN0001` and `BO0001` is `0001`
-1. Go to https://github.com/OpenPecha-Data/C1A81F448
-1. Set text list as input (follow the steps shown in the image below)
-   <img width="1255" alt="run_aligner_input" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/9fea13e8-1c83-446f-a96d-cd92fbbaf9f9">
-1. Run Alinger (shown in the image below)
-   <img width="1762" alt="Run Aligner" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/b5a1170c-8229-487b-9c90-62447fac7038">
-1. Check log if the aligner running properly (shown in the image below)
-   <img width="1467" alt="Screenshot 2023-05-29 at 4 24 05 PM" src="https://github.com/OpenPecha/mt-training-data-prep-tools/assets/16164304/e46df67e-3f2f-4084-a7fa-8de8701474d7">
+1. Login into the server via `ssh tenzin@openpecha.bdrc.io`
+1. Save the text text pair list in any text file in `~/TM/input`, eg: `~/TM/input/tm_todo.txt` with a text list like:
+   ```
+   0001 0002 0003
+   ```
+1. Now run `./scripts/create_tm.sh input/tm_todo.txt`
+1. Check out `stdout` and `stderr` with `tail -f ./nohup.out`
 
-## Publishing TMs as training data
+**Note**:
 
-- we have setup corn job to publish new release of training data weekly.
-- [Releases](https://github.com/MonlamAI/MonlamAI_TMs/releases) are just github release with date as a version tag.
-- We have github [issue](https://github.com/MonlamAI/MonlamAI_TMs/issues) for getting feedback on the each release.
+1. To re-run the text id, delete the text id from `~/TM/C1A81F448/C1A81F448.opc/meta.yml` manually. This is because the pipeline will skip the text id if it's already in the `meta.yml` file.
 
-[MonlamAI_TMs](https://github.com/MonlamAI/MonlamAI_TMs) will contain all the exported TMs. Checkout it's README.md for how to use it.
+## Publishing a TMs as training dataset
 
-Under the hood it's using `op_mt_tools.publish` to create new release.
+Currently, we are publishing all TM at [dharmamitra](https://github.com/dharmamitra) like this [mitra-mt-en-bo-3](https://github.com/dharmamitra/mitra-mt-en-bo-3)
+
+### Versioning
+
+- Last digit is in the dataset name is the version number. Eg: mitra-mt-en-bo-3, 3 is the version number.
+- so the next version will be incremented by 1, eg: mitra-mt-en-bo-4
+
+### Publishing a new version
+
+1. Make a copy of the previous version, eg: mitra-mt-en-bo-3 to mitra-mt-en-bo-4
+1. Create a github repo with same name as the new version, eg: mitra-mt-en-bo-4
+1. Push the local copy of the new version to the new github repo
+1. Update a `~/input/publish_todo.txt` with a newly created TM id, like
+   ```
+   TM0001 TM0002 TM0003
+   ```
+1. Run `./scripts/publish.sh ~/MonlamAI/data/mitra-mt-en-bo-4`
+
+## Running QC
+
+1. Update the `~/input/qc_todo.txt` with the TM ids to be QCed, like
+   ```
+   TM0001 TM0002 TM0003
+   ```
+1. Then run `./scripts/qc.sh`
+
+### What does qc script do?
+
+- It will give assign a emoji number from 0️⃣-9️⃣ to each segment pair, which tells whether the segment pair is good or bad.
+- 0️⃣ being the best and 9️⃣ being the worst.
+- Segment pair with no asigned emoji is considered as the best.
+
+Check out this example https://github.com/MonlamAI/TM2233/blob/main/TM2233-bo.txt
