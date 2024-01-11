@@ -14,7 +14,8 @@
 
 1. Get text list from Ready sheet of [Translation Catalog](https://docs.google.com/spreadsheets/d/14CA5kyoAkty2sHhkMT5ZX05Otm7eSGYAt0zAt59xQwI/edit#gid=1563391012). Here, the text list is list of text ids without the language prefix (like `EN` and `BO`), e.g, text id of `EN0001` and `BO0001` is `0001`
 1. Login into the server via `ssh tenzin@openpecha.bdrc.io`
-1. Save the text text pair list in any text file in `~/TM/input`, eg: `~/TM/input/tm_todo.txt` with a text list like:
+1. cd into the `~/TM` directory 
+1. Save the text text pair list in any text file in `./input`, eg: `./input/tm_todo.txt` with a text list like:
    ```
    0001 0002 0003
    ```
@@ -36,10 +37,16 @@ Currently, we are publishing all TM at [dharmamitra](https://github.com/dharmami
 
 ### Publishing a new version
 
-1. Make a copy of the previous version, eg: mitra-mt-en-bo-3 to mitra-mt-en-bo-4
-1. Create a github repo with same name as the new version, eg: mitra-mt-en-bo-4
-1. Push the local copy of the new version to the new github repo
-1. Update a `~/input/publish_todo.txt` with a newly created TM id, like
+1. Rename the previous mitra-mt-en-bo repo located in ~/MonlamAI/data/  eg: mitra-mt-en-bo-3 to mitra-mt-en-bo-4
+1. Create a github repo with same name as the new version, eg: mitra-mt-en-bo-4 in [dharmamitra github organisation](https://github.com/dharmamitra]
+1. Set remote to the new version repo, eg `git remote set-url https://github.com/dharmamitra/mitra-mt-en-bo-4.git`
+1. Push the local repo to github
+1. Update the readme according to new verison
+   1. Title of the version
+   1. Download command
+   1. Catalog link
+1. cd into the `~/TM` directory
+1. Update a `./input/publish_todo.txt` with a newly created TM id, like
    ```
    TM0001 TM0002 TM0003
    ```
@@ -47,7 +54,8 @@ Currently, we are publishing all TM at [dharmamitra](https://github.com/dharmami
 
 ## Running QC
 
-1. Update the `~/input/qc_todo.txt` with the TM ids to be QCed, like
+1. cd into the `~/TM` directory
+1. Update the `./input/qc_todo.txt` with the TM ids to be QCed, like
    ```
    TM0001 TM0002 TM0003
    ```
