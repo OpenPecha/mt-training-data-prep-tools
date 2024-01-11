@@ -38,7 +38,7 @@ Currently, we are publishing all TM at [dharmamitra](https://github.com/dharmami
 ### Publishing a new version
 
 1. Rename the previous mitra-mt-en-bo repo located in ~/MonlamAI/data/  eg: mitra-mt-en-bo-3 to mitra-mt-en-bo-4
-1. Create a github repo with same name as the new version, eg: mitra-mt-en-bo-4 in [dharmamitra github organisation](https://github.com/dharmamitra]
+1. Create a github repo with same name as the new version, eg: mitra-mt-en-bo-4 in [dharmamitra](https://github.com/dharmamitra)
 1. Set remote to the new version repo, eg `git remote set-url https://github.com/dharmamitra/mitra-mt-en-bo-4.git`
 1. Push the local repo to github
 1. Update the readme according to new verison
